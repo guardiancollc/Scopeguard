@@ -1,0 +1,12 @@
+{
+  "name": "scopeguard-beta",
+  "version": "0.7.4",
+  "private": true,
+  "scripts": {
+    "dev": "vercel dev",
+    "check": "node --check app.js && node --check api/analyze.js && node --check api/health.js && node --check api/send-invoice.js && node --check api/email-connect.js && node --check api/email-callback.js && node --check api/email-status.js && node --check api/email-disconnect.js && node --check lib/google-email.js && node --check lib/invoice-pdf.js"
+  },
+  "dependencies": {
+    "pdfkit": "^0.17.2"
+  }
+}

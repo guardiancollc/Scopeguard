@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#0b1220" />
+  <meta name="description" content="ScopeGuard protects subcontractor profit by documenting field work and flagging potential extras." />
+  <title>ScopeGuard</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="header-brand"><div class="brand">ScopeGuard</div><div class="tagline">Protect the profit in every job.</div></div>
+      <div class="top-actions"><span id="syncBadge" class="sync-badge">Starting…</span><span id="userBadge" class="sync-badge hidden"></span><button id="resetBtn" class="ghost small">Reset</button><img class="top-logo" src="scopeguard-logo.png" alt="ScopeGuard shield" /></div>
+    </header>
+
+    <main>
+      <section id="auth" class="screen hidden">
+        <div class="hero-card auth-card">
+          <div class="login-brand"><img src="scopeguard-logo.png" alt="ScopeGuard shield" /><div><div class="login-wordmark">ScopeGuard</div><div class="tagline">Protect the profit in every job.</div></div></div>
+          <span class="eyebrow">SCOPEGUARD CLOUD</span>
+          <h1>Protect every extra. From the field to the office.</h1>
+          <p>Sign in to keep projects, field logs, and photo evidence synchronized across devices.</p>
+          <label>Email<input id="authEmail" type="email" autocomplete="email" placeholder="you@company.com" /></label>
+          <label>Password<input id="authPassword" type="password" autocomplete="current-password" minlength="8" placeholder="8+ characters" /></label>
+          <div class="two-col"><button id="signInBtn" class="primary">Sign in</button><button id="signUpBtn" class="secondary">Create account</button></div>
+          <p id="authMessage" class="muted"></p>
+          <button id="demoModeBtn" class="ghost">Use local demo instead</button>
+        </div>
+      </section>
+
+      <section id="onboarding" class="screen hidden">
+        <div class="hero-card">
+          <span class="eyebrow">SCOPEGUARD ALPHA</span>
+          <h1>Never lose money on work you already performed.</h1>
+          <p>Capture field work, flag possible extras, preserve photo evidence and turn undocumented work into a professional extra-work record.</p>
+          <label>Company name<input id="companyName" placeholder="Guardian Concrete LLC" /></label>
+          <label>Your name<input id="ownerName" placeholder="Anthony" /></label>
+          <button id="createCompanyBtn" class="primary">Start ScopeGuard</button>
+        </div>
+      </section>
+
+      <section id="home" class="screen hidden">
+        <div class="home-welcome"><span class="eyebrow">SCOPEGUARD</span><h2 id="homeCompanyTitle">Your company</h2><p class="muted">What do you want to manage?</p></div>
+        <div class="home-action-grid">
+          <button id="homeInvoicesBtn" class="home-action-card"><span class="home-icon">▤</span><span><strong>Invoices</strong><small>Open, paid & past due invoices</small></span><b>→</b></button>
+          <button id="homeProjectsBtn" class="home-action-card"><span class="home-icon">▦</span><span><strong>Projects</strong><small>Active & finished projects</small></span><b>→</b></button>
+        </div>
+      </section>
+
+      <section id="invoiceCenter" class="screen hidden">
+        <button id="backFromInvoiceCenter" class="ghost">← Home</button>
+        <div class="section-head"><div><span class="eyebrow">INVOICE CENTER</span><h2>All Invoices</h2><p class="muted">Every invoice across every project.</p></div></div>
+        <div id="invoiceCenterGroups"></div>
+      </section>
+
+      <section id="projectCenter" class="screen hidden">
+        <button id="backFromProjectCenter" class="ghost">← Home</button>
+        <div class="section-head"><div><span class="eyebrow">PROJECTS</span><h2>Project Center</h2></div><button id="projectCenterNewBtn" class="primary compact">+ Project</button></div>
+        <div class="center-choice-grid"><button id="activeProjectsBtn" class="center-choice active"><strong>Active Projects</strong><span id="activeProjectCount">0</span></button><button id="finishedProjectsBtn" class="center-choice"><strong>Finished Projects</strong><span id="finishedProjectCount">0</span></button></div>
+        <div class="project-search-wrap"><span>⌕</span><input id="centerProjectSearch" type="search" placeholder="Search projects or customers…" /></div>
+        <div id="centerProjectList" class="project-list"></div>
+      </section>
+
+      <section id="dashboard" class="screen hidden">
+        <div class="section-head">
+          <div><span class="eyebrow">DASHBOARD</span><h2 id="companyTitle">Your company</h2></div>
+          <div class="head-actions"><button id="companyProfileBtn" class="secondary compact">Company Profile</button><button id="newProjectBtn" class="primary compact">+ Project</button></div>
+        </div>
+        <div class="project-search-wrap"><span>⌕</span><input id="projectSearch" type="search" placeholder="Search past projects, GC/customer, status…" autocomplete="off" /></div><div id="metrics" class="metric-grid"></div>
+        <div id="financialSummary" class="card financial-summary"></div>
+        <div class="card callout"><div><strong>Profit Leak Radar</strong><p id="radarText" class="muted">No risks yet.</p></div><span class="radar-dot"></span></div>
+        <div class="card">
+          <div class="card-title-row"><h3>Projects</h3><span id="projectCount" class="pill">0 projects</span></div>
+          <div id="projectList" class="project-list"></div>
+        </div>
+      </section>
+
+
+      <section id="companyProfile" class="screen hidden">
+        <button id="backFromCompanyProfile" class="ghost">← Dashboard</button>
+        <div class="card form-card">
+          <span class="eyebrow">COMPANY PROFILE</span><h2>Your invoice identity</h2>
+          <p class="muted">This information and your logo appear on invoices sent to clients.</p>
+          <div class="company-logo-editor"><img id="companyLogoPreview" alt="Company logo preview" /><div><label class="photo-capture-label" for="companyLogoInput">Upload company logo</label><input id="companyLogoInput" class="photo-input-hidden" type="file" accept="image/*" /></div></div>
+          <label>Company name<input id="profileCompanyName" /></label>
+          <label>Owner / contact name<input id="profileOwnerName" /></label>
+          <div class="two-col"><label>Email<input id="profileEmail" type="email" /></label><label>Phone<input id="profilePhone" type="tel" /></label></div>
+          <label>Business address<textarea id="profileAddress" rows="3" placeholder="Street, city, state ZIP"></textarea></label>
+          <button id="saveCompanyProfileBtn" class="primary">Save company profile</button>
+        </div>
+      </section>
+
+      <section id="projectForm" class="screen hidden">
+        <button class="back ghost">← Dashboard</button>
+        <div class="card form-card">
+          <span class="eyebrow">NEW PROJECT</span><h2>Create a job</h2>
+          <label>Project name<input id="pName" placeholder="Riverfront Parking Deck" /></label>
+          <label>General contractor / customer<input id="pCustomer" placeholder="ABC Builders" /></label>
+          <label>Client billing email<input id="pClientEmail" type="email" placeholder="ap@abcbuilder.com" /></label>
+          <label>Contract value ($)<input id="pContract" type="number" min="0" step="100" placeholder="250000" /></label>
+          <label>Original scope<textarea id="pScope" rows="6" placeholder="Form, reinforce and place concrete footings, walls and slabs per drawings..."></textarea></label>
+          <div class="two-col"><label>Labor budget ($)<input id="pLaborBudget" type="number" min="0" placeholder="65000" /></label><label>Material budget ($)<input id="pMaterialBudget" type="number" min="0" placeholder="90000" /></label></div>
+          <div class="two-col"><label>Extra-work markup (%)<input id="pMarkup" type="number" min="0" value="20" /></label><label>Default labor rate ($/hr)<input id="pLaborRate" type="number" min="0" value="42" /></label></div>
+          <button id="saveProjectBtn" class="primary">Save project</button>
+        </div>
+      </section>
+
+      <section id="projectDetail" class="screen hidden">
+        <button class="back ghost">← Dashboard</button>
+        <div class="section-head project-detail-head"><div><span class="eyebrow">PROJECT WORKSPACE</span><h2 id="detailName"></h2><p id="detailCustomer" class="muted"></p></div><button id="newLogBtn" class="primary compact">+ Field Log</button></div><div class="project-tabs"><button class="active" data-project-tab="overview">Overview</button><button data-project-tab="logs">Field Logs</button><button data-project-tab="changes">Change Orders</button><button data-project-tab="billing">Billing / Invoices</button></div><div id="billingSnapshot" class="card billing-preview"></div>
+        <div id="projectMetrics" class="metric-grid"></div>
+        <div id="projectOverviewSection" class="card"><h3>Original scope</h3><p id="detailScope" class="scope-text"></p></div>
+        <div id="projectChangesSection" class="card"><div class="card-title-row"><h3>Potential Change Orders</h3><span id="extraCount" class="pill warning">0</span></div><div id="extraList"></div></div>
+        <div class="card"><div class="card-title-row"><h3>Approved Change Orders</h3><span id="approvedExtraCount" class="pill">0</span></div><div id="approvedExtraList"></div></div>
+        <div id="projectLogsSection" class="card"><div class="card-title-row"><h3>Recent field logs</h3></div><div id="logList"></div></div>
+      </section>
+
+
+      <section id="billing" class="screen hidden">
+        <button id="backToBillingProject" class="ghost">← Project</button>
+        <div class="section-head"><div><span class="eyebrow">BILLING</span><h2 id="billingProjectName">Project billing</h2></div><button id="newInvoiceBtn" class="primary compact">+ Invoice</button></div>
+        <div id="billingMetrics" class="billing-metrics"></div>
+        <div class="card"><div class="card-title-row"><h3>Invoices</h3><span id="invoiceCount" class="pill">0</span></div><div id="invoiceList"></div></div>
+        <div id="invoiceForm" class="card form-card hidden">
+          <div class="card-title-row"><h3>Create invoice</h3><button id="closeInvoiceForm" class="ghost">✕</button></div>
+          <label>Send invoice to<input id="invoiceClientEmail" type="email" placeholder="client@company.com" /></label>
+          <div class="two-col"><label>Invoice #<input id="invoiceNumber" placeholder="INV-001" /></label><label>Invoice date<input id="invoiceDate" type="date" /></label></div>
+          <div class="two-col"><label>Due date<input id="invoiceDueDate" type="date" /></label><label>Amount ($)<input id="invoiceAmount" type="number" min="0" step="0.01" placeholder="25000" /></label></div>
+          <label>Description / billing period<textarea id="invoiceDescription" rows="4" placeholder="Progress billing through September 2026…"></textarea></label>
+          <div class="two-col"><label>Retainage ($)<input id="invoiceRetainage" type="number" min="0" step="0.01" value="0" /></label><label>Status<select id="invoiceStatus"><option value="invoiced">Invoiced</option><option value="paid">Paid</option></select></label></div>
+          <button id="saveInvoiceBtn" class="primary">Create invoice</button>
+        </div>
+      </section>
+
+      <section id="fieldLog" class="screen hidden">
+        <button id="backToProject" class="ghost">← Project</button>
+        <div class="card form-card">
+          <span class="eyebrow">FIELD LOG</span><h2>Tell ScopeGuard what happened today</h2>
+          <p class="muted">Fast jobsite entry. Fill the essentials first; details are optional.</p>
+          <div class="quick-log-grid">
+            <label>Workers<input id="crewCount" type="number" inputmode="numeric" min="0" placeholder="8" /></label>
+            <label>Hours each<input id="hoursEach" type="number" inputmode="decimal" min="0" step="0.5" placeholder="10" /></label>
+          </div>
+          <div id="laborQuickSummary" class="quick-summary">Enter workers + hours to see labor total.</div>
+          <label>Work performed<textarea id="workPerformed" rows="3" placeholder="Formed additional wall, moved material, reworked dowels..."></textarea></label>
+          <label>Who directed / requested it?<input id="directedBy" placeholder="GC superintendent, owner, foreman, name..." /></label>
+          <div class="quick-chips" aria-label="Quick requester choices"><button type="button" data-requester="GC superintendent">GC superintendent</button><button type="button" data-requester="Owner">Owner</button><button type="button" data-requester="Foreman">Foreman</button><button type="button" data-requester="No direction / normal scope">Normal scope</button></div>
+          <label>Extra details / delays<textarea id="logNote" rows="4" placeholder="Why it changed, weather, access, rework, delay, drawing/RFI reference, etc."></textarea></label>
+          <button id="voiceBtn" class="secondary voice-wide">🎙 Dictate details</button>
+          <details class="advanced-log"><summary>Cost & production details</summary>
+            <div class="two-col"><label>Loaded labor rate ($/hr)<input id="laborRate" type="number" min="0" step="1" value="42" /></label><label>Material / equipment cost ($)<input id="directCost" type="number" min="0" step="1" value="0" /></label></div>
+            <div class="two-col"><label>Production quantity<input id="productionQty" type="number" min="0" step="0.1" placeholder="180" /></label><label>Production unit<input id="productionUnit" placeholder="LF / SF / CY / tons" /></label></div>
+          </details>
+          <label class="photo-capture-label" for="photoInput">📷 Add jobsite photos <span>Camera or photo library</span></label><input id="photoInput" class="photo-input-hidden" type="file" accept="image/*" multiple capture="environment" />
+          <div id="photoPreview" class="photo-grid"></div>
+          <div class="save-log-bar"><div><strong id="saveLogHours">0 labor hrs</strong><span id="saveLogPhotos">0 photos</span></div><button id="analyzeBtn" class="primary">Save & analyze</button></div>
+        </div>
+        <div id="analysisResult" class="card hidden"></div>
+      </section>
+    </main>
+
+    <nav id="bottomNav" class="bottom-nav hidden"><button data-nav="dashboard">Dashboard</button><button id="quickLogNav">Field Log</button></nav>
+  </div>
+
+  <div id="invoicePreviewModal" class="modal hidden"><div class="modal-panel invoice-preview-panel"><div class="card-title-row"><div><span class="eyebrow">CUSTOMER PREVIEW</span><h2>Invoice Preview</h2></div><button id="closeInvoicePreview" class="ghost">✕</button></div><div id="invoicePreviewDocument" class="invoice-paper"></div><div class="modal-actions invoice-preview-actions"><button id="previewPrintInvoiceBtn" class="secondary">Print / Save PDF</button><button id="previewSendInvoiceBtn" class="primary">Send Invoice</button></div><p id="invoiceSendStatus" class="muted invoice-send-status"></p></div></div>
+
+  <div id="extraModal" class="modal hidden"><div class="modal-panel"><div class="card-title-row"><h2>Extra Work Record</h2><button id="closeModal" class="ghost">✕</button></div><div id="extraDocument"></div><div class="modal-actions"><button id="printExtraBtn" class="primary">Print / Save PDF</button></div></div></div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.4/dist/umd/supabase.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

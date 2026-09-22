@@ -1,0 +1,21 @@
+const PDFDocument=require('pdfkit');
+const money=n=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(Number(n||0));
+function dataImage(s){try{if(!s||!s.startsWith('data:image/'))return null;return Buffer.from(s.split(',')[1]||'','base64')}catch{return null}}
+module.exports=function invoicePdf({invoice:i,project:p,company:c={}}){return new Promise((resolve,reject)=>{try{
+ const doc=new PDFDocument({size:'LETTER',margin:48,info:{Title:`Invoice ${i.number}`,Author:c.name||'ScopeGuard'}});const chunks=[];doc.on('data',x=>chunks.push(x));doc.on('end',()=>resolve(Buffer.concat(chunks)));doc.on('error',reject);
+ const W=doc.page.width, L=48, R=W-48, gold='#D99A19', dark='#111827', gray='#64748B', line='#D1D5DB';
+ doc.rect(0,0,W,8).fill(gold);
+ const logo=dataImage(c.logoData);if(logo){try{doc.image(logo,L,34,{fit:[64,64]})}catch{}}
+ const bx=logo?L+76:L;doc.fillColor(dark).font('Helvetica-Bold').fontSize(18).text(c.name||'Company',bx,42,{width:280});doc.fillColor(gray).font('Helvetica').fontSize(8).text('CONCRETE  |  STRUCTURAL  |  SITE SOLUTIONS',bx,67,{width:300});
+ const contact=[c.owner,c.phone,c.email,c.address].filter(Boolean).join('\n');doc.fillColor(dark).fontSize(9).text(contact,365,40,{width:180,align:'right'});
+ doc.moveTo(L,105).lineTo(R,105).strokeColor(dark).lineWidth(1).stroke();
+ doc.fillColor(dark).font('Helvetica-Bold').fontSize(30).text('INVOICE',L,126);
+ doc.fillColor(gray).fontSize(8).text('BILL TO',L,174);doc.fillColor(dark).fontSize(12).text(p.customer||'Customer',L,188);doc.fillColor(gray).font('Helvetica').fontSize(9).text(i.clientEmail||p.clientEmail||'',L,206);doc.fillColor(dark).font('Helvetica-Bold').fontSize(9).text(`Project: ${p.name}`,L,232);
+ const mx=365,my=126,mw=180,mh=102;doc.roundedRect(mx,my,mw,mh,6).fillAndStroke('#F8FAFC',line);const meta=[['Invoice #',i.number||''],['Invoice Date',i.date||''],['Due Date',i.dueDate||'Upon receipt']];meta.forEach((a,n)=>{let y=my+14+n*28;doc.fillColor(gray).font('Helvetica').fontSize(8).text(a[0],mx+12,y);doc.fillColor(dark).font('Helvetica-Bold').fontSize(9).text(String(a[1]),mx+80,y,{width:86,align:'right'})});
+ let y=275;doc.rect(L,y,R-L,26).fill(dark);doc.fillColor('white').font('Helvetica-Bold').fontSize(9).text('DESCRIPTION',L+12,y+9);doc.text('AMOUNT',R-110,y+9,{width:98,align:'right'});y+=26;
+ const gross=Number(i.amount||0)+Number(i.retainage||0),paid=Number(i.paidAmount||0),balance=Math.max(0,Number(i.amount||0)-paid);doc.rect(L,y,R-L,70).strokeColor(line).stroke();doc.fillColor(dark).font('Helvetica-Bold').fontSize(10).text(i.description||'Project progress billing',L+12,y+14,{width:330});doc.fillColor(gray).font('Helvetica').fontSize(8).text(`Progress invoice for work performed on ${p.name}.`,L+12,y+34,{width:330});doc.fillColor(dark).font('Helvetica-Bold').fontSize(10).text(money(gross),R-110,y+16,{width:98,align:'right'});y+=96;
+ doc.fillColor(gray).font('Helvetica-Bold').fontSize(8).text('NOTES',L,y);doc.fillColor(dark).font('Helvetica').fontSize(9).text(`Thank you for your business.\nIf you have any questions, please contact us.\n\nPayment terms: Due ${i.dueDate||'upon receipt'}.`,L,y+16,{width:270,lineGap:3});
+ const tx=365;doc.fontSize(9);doc.text('Subtotal',tx,y,{width:90});doc.font('Helvetica-Bold').text(money(gross),tx+90,y,{width:90,align:'right'});let ty=y+24;if(Number(i.retainage||0)){doc.font('Helvetica').text('Retainage',tx,ty,{width:90});doc.font('Helvetica-Bold').text(`- ${money(i.retainage)}`,tx+90,ty,{width:90,align:'right'});ty+=22}if(paid){doc.font('Helvetica').text('Paid',tx,ty,{width:90});doc.font('Helvetica-Bold').text(`- ${money(paid)}`,tx+90,ty,{width:90,align:'right'});ty+=22}doc.roundedRect(tx,ty-4,180,34,4).fill(gold);doc.fillColor('#111').font('Helvetica-Bold').fontSize(10).text('AMOUNT DUE',tx+10,ty+8,{width:85});doc.fontSize(11).text(money(balance),tx+95,ty+7,{width:75,align:'right'});
+ doc.rect(0,690,W,102).fill('#111827');doc.fillColor('white').font('Helvetica-Bold').fontSize(14).text('BUILDING A STRONGER TOMORROW',L,714,{width:R-L,align:'center'});doc.fillColor('#CBD5E1').fontSize(8).text('SAFETY     •     QUALITY     •     INTEGRITY     •     RESULTS',L,746,{width:R-L,align:'center'});
+ doc.end();
+ }catch(e){reject(e)}})};

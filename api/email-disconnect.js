@@ -1,0 +1,2 @@
+const {userFromBearer,serviceHeaders,supabaseUrl}=require('../lib/google-email');
+module.exports=async(req,res)=>{try{if(req.method!=='POST')return res.status(405).json({error:'Method not allowed'});const u=await userFromBearer(req);const r=await fetch(`${supabaseUrl()}/rest/v1/email_connections?user_id=eq.${encodeURIComponent(u.id)}&provider=eq.google`,{method:'DELETE',headers:serviceHeaders()});if(!r.ok)throw new Error('Could not disconnect Gmail.');res.json({ok:true});}catch(e){res.status(e.status||500).json({error:e.message});}};

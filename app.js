@@ -317,7 +317,10 @@ $('homeInvoicesBtn')?.addEventListener('click', () => {
 $('homeProjectsBtn')?.addEventListener('click', () => {
   show('projectCenter');
 });
-$('newProjectBtn').onclick=()=>show('projectForm');
+$('quickNewInvoiceBtn')?.addEventListener('click', () => {
+  show('billing');
+  $('invoiceForm')?.classList.remove('hidden');
+});$('newProjectBtn').onclick=()=>show('projectForm');
 $('companyProfileBtn').onclick=()=>openCompanyProfile();
 $('backFromCompanyProfile').onclick=()=>show('home');
 $('projectSearch')?.addEventListener('input',renderDashboard);

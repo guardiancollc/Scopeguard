@@ -318,8 +318,38 @@ $('homeProjectsBtn')?.addEventListener('click', () => {
   show('projectCenter');
 });
 $('quickNewInvoiceBtn')?.addEventListener('click', () => {
-  show('billing');
-  $('invoiceForm')?.classList.remove('hidden');
+  let chooser = $('quickInvoiceClientChooser');
+
+  if (!chooser) {
+    chooser = document.createElement('div');
+    chooser.id = 'quickInvoiceClientChooser';
+    chooser.innerHTML = `
+      <div class="card form-card">
+        <span class="eyebrow">NEW INVOICE</span>
+        <h2>Choose a client</h2>
+        <p class="muted">Select an existing client or add a new client.</p>
+        <button id="invoiceExistingClientBtn" class="primary">Existing Client</button>
+        <button id="invoiceNewClientBtn" class="secondary">+ New Client</button>
+        <button id="invoiceChooserCancelBtn" class="ghost">Cancel</button>
+      </div>
+    `;
+
+    $('invoiceCenter').appendChild(chooser);
+
+    $('invoiceExistingClientBtn').onclick = () => {
+      chooser.remove();
+      show('clients');
+    };
+
+    $('invoiceNewClientBtn').onclick = () => {
+      chooser.remove();
+      show('clientForm');
+    };
+
+    $('invoiceChooserCancelBtn').onclick = () => {
+      chooser.remove();
+    };
+  }
 });$('newProjectBtn').onclick=()=>show('projectForm');
 $('companyProfileBtn').onclick=()=>openCompanyProfile();
 $('backFromCompanyProfile').onclick=()=>show('home');

@@ -363,15 +363,41 @@ function openCompanyProfile(){const c=state.company||{};$('profileCompanyName').
 $('companyLogoInput')?.addEventListener('change',e=>{const f=e.target.files?.[0];if(!f)return;if(f.size>1500000)return alert('Please use a company logo under 1.5 MB.');const r=new FileReader();r.onload=()=>{state.company.logoData=String(r.result);$('companyLogoPreview').src=state.company.logoData;$('companyLogoPreview').classList.remove('hidden');};r.readAsDataURL(f);});
 $('saveCompanyProfileBtn').onclick=async()=>{const c=state.company;c.name=$('profileCompanyName').value.trim()||c.name;c.owner=$('profileOwnerName').value.trim();c.email=$('profileEmail').value.trim();c.phone=$('profilePhone').value.trim();c.address=$('profileAddress').value.trim();c.website=$('profileWebsite').value.trim();c.licenseNumber=$('profileLicense').value.trim();if(cloudEnabled&&session){const {error}=await db.from('companies').update({name:c.name,owner_name:c.owner||null,email:c.email||null,phone:c.phone||null,address:c.address||null,logo_data:c.logoData||null,website:c.website||null,license_number:c.licenseNumber||null}).eq('id',c.id);if(error)return alert(error.message);}cache();show('dashboard');};
 window.markInvoicePaid=async(id)=>{
-  const p=project(),i=(p?.invoices||[]).find(x=>x.id===id);if(!i)return;
+  const p=project();
+  const i=(p?.invoices||[]).find(x=>x.id===id);
+
+  if(!i)return;
   if(i.status==='paid')return;
+
   if(!confirm(`Mark ${i.number} as paid in full (${money(i.amount)})?`))return;
- };  if(cloudEnabled&&session){const {error}=await db.from('invoices').update({status:'paid',paid_amount:i.amount}).eq('id',id);if(error)return alert(error.message);}
-  i.status='paid';i.paidAmount=i.amount;cache();
-  renderBilling();renderProject();renderInvoiceCenter();if(activeClientId)renderClientDetail();
-  if(activeInvoiceId===id){$('invoicePreviewDocument').innerHTML=invoiceHtml(p,i);updatePreviewPaidButton(i);}
-};
-async function initCloud(){
+
+  if(cloudEnabled&&session){
+    const {error}=await db
+      .from('invoices')
+      .update({
+        status:'paid',
+        paid_amount:i.amount
+      })
+      .eq('id',id);
+
+    if(error)return alert(error.message);
+  }
+
+  i.status='paid';
+  i.paidAmount=i.amount;
+  cache();
+
+  renderBilling();
+  renderProject();
+  renderInvoiceCenter();
+
+  if(activeClientId)renderClientDetail();
+
+  if(activeInvoiceId===id){
+    $('invoicePreviewDocument').innerHTML=invoiceHtml(p,i);
+    updatePreviewPaidButton(i);
+  }
+};async function initCloud(){
   try {
     // Supabase publishable credentials are intentionally safe for browser use; RLS protects tenant data.
     const cfg = {

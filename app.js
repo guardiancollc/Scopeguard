@@ -705,19 +705,7 @@ if (!lineItems.length) return alert('Add at least one invoice line item.');  con
   } else if(email&&!client.email){client.email=email;if(cloudEnabled&&session){const {error}=await db.from('clients').update({email}).eq('id',client.id);if(error)return alert(error.message);}}
   p.clientId=client.id;p.clientEmail=email||client.email||p.clientEmail||'';
   if(cloudEnabled&&session){const {error}=await db.from('projects').update({client_id:client.id,client_email:p.clientEmail||null}).eq('id',p.id);if(error)return alert(error.message);}
-  if(cloudEnabled&&session){const row={project_id:p.id,created_by:session.user.id,invoice_number:inv.number,invoice_date:inv.date,due_date:inv.dueDate||null,description:inv.description,client_email:inv.clientEmail||null,amount:inv.amount,retainage:inv.retainage,status:inv.status,paid_amount:inv.paidAmount};const {data,error}=await db.from('invoices').insert(row).select().single();if(error)return alert(error.message);inv.id=data.id;}
-  p.invoices=p.invoices||[];p.invoices.push(inv);cache();$('invoiceForm').classList.add('hidden');renderBilling();renderProject();
-};
-document.querySelectorAll('.back').forEach(b=>b.onclick=()=>show('projectCenter'));
-$('saveProjectBtn').onclick=async()=>{
-  if(!$('pName').value.trim())return alert('Enter a project name.');
-  const local={id:uid(),name:$('pName').value.trim(),customer:$('pCustomer').value.trim(),clientEmail:$('pClientEmail').value.trim(),contractValue:Number($('pContract').value||0),scope:$('pScope').value.trim(),laborBudget:Number($('pLaborBudget').value||0),materialBudget:Number($('pMaterialBudget').value||0),markup:Number($('pMarkup').value||20),defaultLaborRate:Number($('pLaborRate').value||42),logs:[],extras:[],invoices:[],createdAt:new Date().toISOString()};
-  if(cloudEnabled && session){
-    setSync('Saving…','cloud');
-    const matchedClient=(state.clients||[]).find(c=>c.name.trim().toLowerCase()===local.customer.trim().toLowerCase()); if(matchedClient)local.clientId=matchedClient.id;
-    const row={company_id:state.company.id,name:local.name,customer:local.customer,client_id:local.clientId||null,client_email:local.clientEmail||null,contract_value:local.contractValue,original_scope:local.scope,labor_budget:local.laborBudget,material_budget:local.materialBudget,extra_markup:local.markup,default_labor_rate:local.defaultLaborRate};
-    const {data,error}=await db.from('projects').insert(row).select().single();
-   const inv={
+ const inv={
   id:uid(),
   number:$('invoiceNumber').value.trim()||`INV-${Date.now()}`,
   date:$('invoiceDate').value||isoDate(),
@@ -729,7 +717,19 @@ $('saveProjectBtn').onclick=async()=>{
   retainage:Number($('invoiceRetainage').value||0),
   status:$('invoiceStatus').value,
   paidAmount:$('invoiceStatus').value==='paid'?amount:0
-};    if(error){setSync('Sync error','offline');return alert(error.message);} local.id=data.id; setSync('Cloud synced','cloud');
+};  if(cloudEnabled&&session){const row={project_id:p.id,created_by:session.user.id,invoice_number:inv.number,invoice_date:inv.date,due_date:inv.dueDate||null,description:inv.description,client_email:inv.clientEmail||null,amount:inv.amount,retainage:inv.retainage,status:inv.status,paid_amount:inv.paidAmount};const {data,error}=await db.from('invoices').insert(row).select().single();if(error)return alert(error.message);inv.id=data.id;}
+  p.invoices=p.invoices||[];p.invoices.push(inv);cache();$('invoiceForm').classList.add('hidden');renderBilling();renderProject();
+};
+document.querySelectorAll('.back').forEach(b=>b.onclick=()=>show('projectCenter'));
+$('saveProjectBtn').onclick=async()=>{
+  if(!$('pName').value.trim())return alert('Enter a project name.');
+  const local={id:uid(),name:$('pName').value.trim(),customer:$('pCustomer').value.trim(),clientEmail:$('pClientEmail').value.trim(),contractValue:Number($('pContract').value||0),scope:$('pScope').value.trim(),laborBudget:Number($('pLaborBudget').value||0),materialBudget:Number($('pMaterialBudget').value||0),markup:Number($('pMarkup').value||20),defaultLaborRate:Number($('pLaborRate').value||42),logs:[],extras:[],invoices:[],createdAt:new Date().toISOString()};
+  if(cloudEnabled && session){
+    setSync('Saving…','cloud');
+    const matchedClient=(state.clients||[]).find(c=>c.name.trim().toLowerCase()===local.customer.trim().toLowerCase()); if(matchedClient)local.clientId=matchedClient.id;
+    const row={company_id:state.company.id,name:local.name,customer:local.customer,client_id:local.clientId||null,client_email:local.clientEmail||null,contract_value:local.contractValue,original_scope:local.scope,labor_budget:local.laborBudget,material_budget:local.materialBudget,extra_markup:local.markup,default_labor_rate:local.defaultLaborRate};
+    const {data,error}=await db.from('projects').insert(row).select().single();
+  if(error){setSync('Sync error','offline');return alert(error.message);} local.id=data.id; setSync('Cloud synced','cloud');
   }
   state.projects.push(local);state.activeProjectId=local.id;cache();show('projectDetail');
 };

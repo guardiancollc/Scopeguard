@@ -157,24 +157,198 @@ function renderBilling(){
 let activeInvoiceId=null;
 function invoiceHtml(p,i){
   const c=state.company||{};
-  const gross=Number(i.amount||0)+Number(i.retainage||0), paid=Number(i.paidAmount||0), balance=Math.max(0,Number(i.amount||0)-paid);
+  const paid=Number(i.paidAmount||0);
+  const retainage=Number(i.retainage||0);
   const contact=[c.phone,c.email,c.address].filter(Boolean).map(escapeHtml);
-  const initials=String(c.name||'Company').split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0]).join('').toUpperCase();
+  const initials=String(c.name||'Company')
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0,2)
+    .map(x=>x[0])
+    .join('')
+    .toUpperCase();
+
   const due=i.dueDate?escapeHtml(i.dueDate):'Upon receipt';
-  return `<div class="opt1-topline"></div><div class="opt1-body">
+
+  const lineItems=Array.isArray(i.lineItems)&&i.lineItems.length
+    ? i.lineItems
+    : [{
+        type:'',
+        description:i.description||'Project progress billing',
+        amount:Number(i.amount||0)
+      }];
+
+  const typeNames={
+    general:'General Scope',
+    hourly:'Hourly',
+    material:'Material',
+    change_order:'Change Order'
+  };
+
+  const itemRows=lineItems.map(item=>{
+    const typeName=typeNames[item.type]||item.type||'';
+
+    return `<tr>
+      <td>
+        ${typeName?`<strong>${escapeHtml(typeName)}</strong><br>`:''}
+        ${escapeHtml(item.description||'')}
+      </td>
+      <td>
+        <strong>${money(Number(item.amount||0))}</strong>
+      </td>
+    </tr>`;
+  }).join('');
+
+  const subtotal=lineItems.reduce(
+    (sum,item)=>sum+Number(item.amount||0),
+    0
+  );
+
+  const balance=Math.max(0,subtotal-retainage-paid);
+
+  return `<div class="opt1-topline"></div>
+  <div class="opt1-body">
+
     <div class="opt1-head">
-      <div class="opt1-brand">${c.logoData?`<img class="opt1-logo" src="${c.logoData}" alt="Company logo">`:`<div class="opt1-company-mark">${escapeHtml(initials)}</div>`}<div><div class="opt1-company">${escapeHtml(c.name||'Company')}</div><div class="opt1-tagline">CONCRETE &nbsp;|&nbsp; STRUCTURAL &nbsp;|&nbsp; SITE SOLUTIONS</div></div></div>
-      <div class="opt1-contact opt1-contact-top">${c.owner?`<b>${escapeHtml(c.owner)}</b><br>`:''}${contact.join('<br>')}</div>
+      <div class="opt1-brand">
+        ${
+          c.logoData
+            ? `<img class="opt1-logo" src="${c.logoData}" alt="Company logo">`
+            : `<div class="opt1-company-mark">${escapeHtml(initials)}</div>`
+        }
+
+        <div>
+          <div class="opt1-company">
+            ${escapeHtml(c.name||'Company')}
+          </div>
+
+          <div class="opt1-tagline">
+            CONCRETE &nbsp;|&nbsp; STRUCTURAL &nbsp;|&nbsp; SITE SOLUTIONS
+          </div>
+        </div>
+      </div>
+
+      <div class="opt1-contact opt1-contact-top">
+        ${c.owner?`<b>${escapeHtml(c.owner)}</b><br>`:''}
+        ${contact.join('<br>')}
+      </div>
     </div>
+
     <div class="opt1-rule"></div>
-    <div class="opt1-title-row"><div><h1>INVOICE</h1><div class="opt1-billto"><div class="opt1-label">Bill To</div><strong>${escapeHtml(p.customer||'Customer')}</strong><div>${escapeHtml(i.clientEmail||p.clientEmail||'')}</div><div class="opt1-project"><b>Project:</b> ${escapeHtml(p.name)}</div></div></div>
-      <div class="opt1-meta-box"><div><span>Invoice #</span><b>${escapeHtml(i.number||'')}</b></div><div><span>Invoice Date</span><b>${escapeHtml(i.date||'')}</b></div><div><span>Due Date</span><b>${due}</b></div></div>
+
+    <div class="opt1-title-row">
+      <div>
+        <h1>INVOICE</h1>
+
+        <div class="opt1-billto">
+          <div class="opt1-label">Bill To</div>
+
+          <strong>
+            ${escapeHtml(p.customer||'Customer')}
+          </strong>
+
+          <div>
+            ${escapeHtml(i.clientEmail||p.clientEmail||'')}
+          </div>
+
+          <div class="opt1-project">
+            <b>Project:</b> ${escapeHtml(p.name)}
+          </div>
+        </div>
+      </div>
+
+      <div class="opt1-meta-box">
+        <div>
+          <span>Invoice #</span>
+          <b>${escapeHtml(i.number||'')}</b>
+        </div>
+
+        <div>
+          <span>Invoice Date</span>
+          <b>${escapeHtml(i.date||'')}</b>
+        </div>
+
+        <div>
+          <span>Due Date</span>
+          <b>${due}</b>
+        </div>
+      </div>
     </div>
-    <table class="opt1-table"><thead><tr><th>Description</th><th>Amount</th></tr></thead><tbody><tr><td><strong>${escapeHtml(i.description||'Project progress billing')}</strong><div class="opt1-contact">Progress invoice for work performed on ${escapeHtml(p.name)}.</div></td><td><strong>${money(gross)}</strong></td></tr>${Number(i.retainage||0)?`<tr><td>Less retainage</td><td>− ${money(i.retainage)}</td></tr>`:''}</tbody></table>
-    <div class="opt1-summary"><div class="opt1-notes"><div class="opt1-label">Notes</div>Thank you for your business.<br>If you have any questions, please contact us.<br><br><strong>Payment terms:</strong> Due ${due}.</div><div><div class="opt1-total-row"><span>Subtotal</span><b>${money(gross)}</b></div>${Number(i.retainage||0)?`<div class="opt1-total-row"><span>Retainage</span><b>− ${money(i.retainage)}</b></div>`:''}${paid?`<div class="opt1-total-row"><span>Paid</span><b>− ${money(paid)}</b></div>`:''}<div class="opt1-total-row due"><span>AMOUNT DUE</span><span>${money(balance)}</span></div></div></div>
-  </div><div class="opt1-photo-footer"><div class="opt1-footer-shade"><strong>BUILDING A STRONGER TOMORROW</strong><div class="opt1-values"><span>◉ SAFETY</span><span>◆ QUALITY</span><span>▣ INTEGRITY</span><span>▥ RESULTS</span></div></div></div>`;
-}
-window.markInvoicePaidGlobal=async(projectId,id)=>{state.activeProjectId=projectId;cache();await markInvoicePaid(id);renderInvoiceCenter();if(activeClientId)renderClientDetail();};
+
+    <table class="opt1-table">
+      <thead>
+        <tr>
+          <th>Description</th>
+          <th>Amount</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        ${itemRows}
+      </tbody>
+    </table>
+
+    <div class="opt1-summary">
+
+      <div class="opt1-notes">
+        <div class="opt1-label">Notes</div>
+
+        Thank you for your business.<br>
+        If you have any questions, please contact us.<br><br>
+
+        <strong>Payment terms:</strong> Due ${due}.
+      </div>
+
+      <div>
+
+        <div class="opt1-total-row">
+          <span>Subtotal</span>
+          <b>${money(subtotal)}</b>
+        </div>
+
+        ${
+          retainage
+            ? `<div class="opt1-total-row">
+                <span>Retainage</span>
+                <b>− ${money(retainage)}</b>
+              </div>`
+            : ''
+        }
+
+        ${
+          paid
+            ? `<div class="opt1-total-row">
+                <span>Paid</span>
+                <b>− ${money(paid)}</b>
+              </div>`
+            : ''
+        }
+
+        <div class="opt1-total-row due">
+          <span>AMOUNT DUE</span>
+          <span>${money(balance)}</span>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <div class="opt1-photo-footer">
+    <div class="opt1-footer-shade">
+
+      <strong>BUILDING A STRONGER TOMORROW</strong>
+
+      <div class="opt1-values">
+        <span>◉ SAFETY</span>
+        <span>◆ QUALITY</span>
+        <span>▣ INTEGRITY</span>
+        <span>▥ RESULTS</span>
+      </div>
+
+    </div>
+  </div>`;
+}window.markInvoicePaidGlobal=async(projectId,id)=>{state.activeProjectId=projectId;cache();await markInvoicePaid(id);renderInvoiceCenter();if(activeClientId)renderClientDetail();};
 window.previewInvoiceGlobal=(projectId,id)=>{state.activeProjectId=projectId;cache();previewInvoice(id);};
 window.previewInvoice=(id)=>{const p=project(),i=(p?.invoices||[]).find(x=>x.id===id);if(!p||!i)return;activeInvoiceId=id;$('invoicePreviewDocument').innerHTML=invoiceHtml(p,i);$('invoiceSendStatus').textContent=i.sentAt?`Last sent to ${i.sentTo||i.clientEmail||p.clientEmail||'customer'} on ${new Date(i.sentAt).toLocaleString()}.`:'';updatePreviewPaidButton(i);$('invoicePreviewModal').classList.remove('hidden');};
 function updatePreviewPaidButton(i){const b=$('previewMarkPaidBtn');if(!b)return;b.classList.toggle('hidden',i.status==='paid');}
@@ -505,7 +679,6 @@ if (!lineItems.length) return alert('Add at least one invoice line item.');  con
   } else if(email&&!client.email){client.email=email;if(cloudEnabled&&session){const {error}=await db.from('clients').update({email}).eq('id',client.id);if(error)return alert(error.message);}}
   p.clientId=client.id;p.clientEmail=email||client.email||p.clientEmail||'';
   if(cloudEnabled&&session){const {error}=await db.from('projects').update({client_id:client.id,client_email:p.clientEmail||null}).eq('id',p.id);if(error)return alert(error.message);}
-  const inv={id:uid(),number:$('invoiceNumber').value.trim()||`INV-${Date.now()}`,date:$('invoiceDate').value||isoDate(),dueDate:$('invoiceDueDate').value||'',description:$('invoiceDescription').value.trim(),clientEmail:p.clientEmail,amount,retainage:Number($('invoiceRetainage').value||0),status:$('invoiceStatus').value,paidAmount:$('invoiceStatus').value==='paid'?amount:0};
   if(cloudEnabled&&session){const row={project_id:p.id,created_by:session.user.id,invoice_number:inv.number,invoice_date:inv.date,due_date:inv.dueDate||null,description:inv.description,client_email:inv.clientEmail||null,amount:inv.amount,retainage:inv.retainage,status:inv.status,paid_amount:inv.paidAmount};const {data,error}=await db.from('invoices').insert(row).select().single();if(error)return alert(error.message);inv.id=data.id;}
   p.invoices=p.invoices||[];p.invoices.push(inv);cache();$('invoiceForm').classList.add('hidden');renderBilling();renderProject();
 };

@@ -79,10 +79,121 @@ function allInvoices(){
 }
 function renderInvoiceCenter(){
   const rows=allInvoices();
-  const groups=[['open','Open Invoices'],['overdue','Past Due Invoices'],['paid','Paid Invoices']];
-  $('invoiceCenterGroups').innerHTML=groups.map(([key,title])=>{const list=rows.filter(x=>x.state===key);return `<section class="invoice-group"><div class="invoice-group-head"><h3>${title}</h3><span class="count">${list.length}</span></div>${list.length?list.map(({p,i})=>`<div class="invoice-center-card"><div><strong>${escapeHtml(i.number)}</strong><div class="row-sub">${escapeHtml(p.customer||'Customer')} · ${escapeHtml(p.name)}</div><div class="row-sub">${i.dueDate?`Due ${escapeHtml(i.dueDate)}`:'No due date'}</div></div><div class="right"><strong>${money(i.amount)}</strong><div class="status-label status-${key}">${key==='overdue'?'PAST DUE':key.toUpperCase()}</div><button class="secondary small" onclick="previewInvoiceGlobal('${p.id}','${i.id}')">Open</button>${i.status!=='paid'?`<button class="ghost small" onclick="markInvoicePaidGlobal('${p.id}','${i.id}')">✓ Mark Paid</button>`:''}</div></div>`).join(''):`<div class="card"><p class="muted">No ${title.toLowerCase()}.</p></div>`}</section>`}).join('');
-}
-let projectCenterMode='active';
+  const currentYear=new Date().getFullYear();
+
+  const yearRows=rows.filter(({i})=>{
+    const invoiceDate=i.date||i.invoice_date||'';
+    if(!invoiceDate) return false;
+    const d=new Date(`${invoiceDate}T12:00:00`);
+    return !Number.isNaN(d.getTime()) && d.getFullYear()===currentYear;
+  });
+
+  const totalInvoiced=yearRows.reduce((sum,{i})=>{
+    return sum+Number(i.amount||0);
+  },0);
+
+  const totalPaid=yearRows.reduce((sum,{i})=>{
+    const amount=Number(i.amount||0);
+    const paidAmount=Number(i.paidAmount??i.paid_amount??0);
+
+    if(i.status==='paid'){
+      return sum+(paidAmount>0?paidAmount:amount);
+    }
+
+    return sum+paidAmount;
+  },0);
+
+  const groups=[
+    ['open','Open Invoices'],
+    ['overdue','Past Due Invoices'],
+    ['paid','Paid Invoices']
+  ];
+
+  $('invoiceCenterGroups').innerHTML=`
+    <section class="invoice-group">
+      <div class="invoice-group-head">
+        <h3>${currentYear} Invoice Summary</h3>
+        <span class="count">${yearRows.length} invoices</span>
+      </div>
+
+      <div class="invoice-center-card">
+        <div>
+          <strong>Total Invoiced This Year</strong>
+          <div class="row-sub">All invoices dated ${currentYear}</div>
+        </div>
+        <div class="right">
+          <strong>${money(totalInvoiced)}</strong>
+        </div>
+      </div>
+
+      <div class="invoice-center-card">
+        <div>
+          <strong>Total Paid This Year</strong>
+          <div class="row-sub">Payments received on ${currentYear} invoices</div>
+        </div>
+        <div class="right">
+          <strong>${money(totalPaid)}</strong>
+        </div>
+      </div>
+    </section>
+
+    ${groups.map(([key,title])=>{
+      const list=rows.filter(x=>x.state===key);
+
+      return `
+        <section class="invoice-group">
+          <div class="invoice-group-head">
+            <h3>${title}</h3>
+            <span class="count">${list.length}</span>
+          </div>
+
+          ${
+            list.length
+            ? list.map(({p,i})=>`
+                <div class="invoice-center-card">
+                  <div>
+                    <strong>${escapeHtml(i.number)}</strong>
+                    <div class="row-sub">
+                      ${escapeHtml(p.customer||'Customer')} · ${escapeHtml(p.name)}
+                    </div>
+                    <div class="row-sub">
+                      ${i.dueDate?`Due ${escapeHtml(i.dueDate)}`:'No due date'}
+                    </div>
+                  </div>
+
+                  <div class="right">
+                    <strong>${money(i.amount)}</strong>
+                    <div class="status-label status-${key}">
+                      ${key==='overdue'?'PAST DUE':key.toUpperCase()}
+                    </div>
+
+                    <button
+                      class="secondary small"
+                      onclick="previewInvoiceGlobal('${p.id}','${i.id}')">
+                      Open
+                    </button>
+
+                    ${
+                      i.status!=='paid'
+                      ? `<button
+                           class="ghost small"
+                           onclick="markInvoicePaidGlobal('${p.id}','${i.id}')">
+                           ✓ Mark Paid
+                         </button>`
+                      : ''
+                    }
+                  </div>
+                </div>
+              `).join('')
+            : `<div class="card">
+                 <p class="muted">No ${title.toLowerCase()}.</p>
+               </div>`
+          }
+        </section>
+      `;
+    }).join('')}
+  `;
+}let projectCenterMode='active';
 function isFinishedProject(p){return ['finished','complete','completed','closed'].includes(String(p.status||'active').toLowerCase());}
 function renderProjectCenter(){
   const active=state.projects.filter(p=>!isFinishedProject(p)), finished=state.projects.filter(isFinishedProject);

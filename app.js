@@ -366,7 +366,19 @@ window.markInvoicePaid=async(id)=>{
   const p=project(),i=(p?.invoices||[]).find(x=>x.id===id);if(!i)return;
   if(i.status==='paid')return;
   if(!confirm(`Mark ${i.number} as paid in full (${money(i.amount)})?`))return;
-  if(cloudEnabled&&session){const {error}=await db.from('invoices').update({status:'paid',paid_amount:i.amount}).eq('id',id);if(error)return alert(error.message);}
+  const inv={
+  id:uid(),
+  number:$('invoiceNumber').value.trim()||`INV-${Date.now()}`,
+  date:$('invoiceDate').value||isoDate(),
+  dueDate:$('invoiceDueDate').value||'',
+  description:$('invoiceDescription').value.trim(),
+  lineItems:lineItems,
+  clientEmail:p.clientEmail,
+  amount,
+  retainage:Number($('invoiceRetainage').value||0),
+  status:$('invoiceStatus').value,
+  paidAmount:$('invoiceStatus').value==='paid'?amount:0
+};  if(cloudEnabled&&session){const {error}=await db.from('invoices').update({status:'paid',paid_amount:i.amount}).eq('id',id);if(error)return alert(error.message);}
   i.status='paid';i.paidAmount=i.amount;cache();
   renderBilling();renderProject();renderInvoiceCenter();if(activeClientId)renderClientDetail();
   if(activeInvoiceId===id){$('invoicePreviewDocument').innerHTML=invoiceHtml(p,i);updatePreviewPaidButton(i);}

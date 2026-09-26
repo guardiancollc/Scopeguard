@@ -92,3 +92,83 @@ main{padding-bottom:calc(82px + env(safe-area-inset-bottom,0px))}
 .invoice-paper .opt1-brand{min-width:0;flex:1}.invoice-paper .opt1-brand>div{min-width:0}.invoice-paper .opt1-company{font-size:22px;line-height:1.08;text-transform:uppercase;max-width:330px;word-break:normal;overflow-wrap:normal}.invoice-paper .opt1-company-mark{width:72px;height:72px;flex:0 0 72px;border:2px solid #17191d;border-radius:4px;display:grid;place-items:center;background:#f4f4f4;font-size:24px;font-weight:950;letter-spacing:-.06em;color:#17191d;box-shadow:inset 0 0 0 5px #d6a400}.invoice-paper .opt1-contact-top{font-size:10px}.invoice-paper .opt1-contact-top b{color:#111827}.invoice-paper .opt1-title-row{grid-template-columns:minmax(0,1fr) 245px}.invoice-paper .opt1-meta-box>div{grid-template-columns:90px 1fr}.invoice-paper .opt1-meta-box b{text-align:right}.invoice-paper .opt1-billto strong{font-size:16px}.invoice-paper .opt1-project{font-size:12px}.invoice-paper .opt1-table{table-layout:fixed}.invoice-paper .opt1-table th:last-child,.invoice-paper .opt1-table td:last-child{width:135px}.invoice-paper .opt1-footer-shade>strong{white-space:nowrap}.invoice-preview-panel{overscroll-behavior:contain}.modal:not(.hidden){z-index:1000}
 @media(max-width:600px){.invoice-paper .opt1-head{align-items:flex-start}.invoice-paper .opt1-company{font-size:17px;max-width:210px}.invoice-paper .opt1-company-mark{width:52px;height:52px;flex-basis:52px;font-size:18px;box-shadow:inset 0 0 0 4px #d6a400}.invoice-paper .opt1-tagline{font-size:6.5px;line-height:1.35}.invoice-paper .opt1-contact-top{font-size:8px;min-width:118px}.invoice-paper .opt1-title-row{grid-template-columns:minmax(0,1fr) 175px;gap:14px}.invoice-paper .opt1-meta-box>div{grid-template-columns:1fr;padding:6px 8px}.invoice-paper .opt1-meta-box b{text-align:left}.invoice-paper .opt1-table th:last-child,.invoice-paper .opt1-table td:last-child{width:105px}.invoice-paper .opt1-footer-shade>strong{font-size:9px;letter-spacing:.14em}}
 .menu-trigger{font-size:22px;min-width:42px}.menu-drawer{position:fixed;inset:0;z-index:120}.menu-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.62);border:0}.menu-panel{position:absolute;top:0;right:0;width:min(86vw,360px);height:100%;background:#0b1220;border-left:1px solid #26364c;padding:calc(22px + env(safe-area-inset-top)) 20px 24px;box-shadow:-20px 0 60px rgba(0,0,0,.45)}.menu-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px}.menu-panel>button:not(.ghost){display:block;width:100%;text-align:left;background:#101b2b;color:#fff;border:1px solid #2b3d57;border-radius:14px;padding:16px;margin:10px 0;font-weight:800;font-size:16px}.client-list{display:grid;gap:14px}.client-card{background:#0f1a2a;border:1px solid #2a3b54;border-radius:18px;padding:18px;display:flex;justify-content:space-between;gap:16px;align-items:center}.client-card h3{margin:0 0 5px}.client-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:18px 0}.client-kpis .metric{min-width:0}.client-project-row{padding:14px 0;border-bottom:1px solid #26364c}.client-invoice-row{display:flex;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid #26364c}@media(max-width:600px){.client-kpis{grid-template-columns:1fr}.menu-trigger{order:-1}}
+/* STEP 1.A — MOBILE QUICK ACTIONS */
+
+.home-welcome {
+  margin-bottom: 22px;
+}
+
+.home-welcome h2 {
+  margin: 4px 0 2px;
+}
+
+.quick-actions-section,
+.home-manage-section {
+  margin-top: 24px;
+}
+
+.quick-actions-heading {
+  margin-bottom: 12px;
+}
+
+.quick-actions-heading h3 {
+  margin: 4px 0 0;
+}
+
+.quick-action-grid,
+.home-action-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.home-action-card {
+  width: 100%;
+  min-height: 76px;
+  display: grid;
+  grid-template-columns: 44px 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 15px;
+  text-align: left;
+  border-radius: 16px;
+  cursor: pointer;
+}
+
+.home-action-card span:nth-child(2) {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.home-action-card strong {
+  font-size: 16px;
+}
+
+.home-action-card small {
+  opacity: 0.72;
+  font-size: 12px;
+  line-height: 1.3;
+}
+
+.home-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  font-size: 21px;
+}
+
+.quick-action-card {
+  min-height: 82px;
+}
+
+@media (min-width: 700px) {
+  .quick-action-grid,
+  .home-action-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

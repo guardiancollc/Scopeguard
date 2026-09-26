@@ -292,7 +292,31 @@ $('createCompanyBtn').onclick=async()=>{
     state.company={id,name,owner:session.user.email};state.projects=[];cache();await loadCloudState();show('home');return;
   }
   state.company={id:uid(),name,owner:$('ownerName').value.trim(),createdAt:new Date().toISOString()};cache();show('home');
-};
+  // STEP 1.A — MOBILE QUICK ACTIONS
+
+$('quickInvoiceBtn')?.addEventListener('click', () => {
+  show('invoiceCenter');
+});
+
+$('quickAiInvoiceBtn')?.addEventListener('click', () => {
+  alert('AI-assisted invoice creation is being added in Step 1.A.');
+});
+
+$('quickClientsBtn')?.addEventListener('click', () => {
+  show('clients');
+});
+
+$('quickChangeOrderBtn')?.addEventListener('click', () => {
+  show('projectCenter');
+});
+
+$('homeInvoicesBtn')?.addEventListener('click', () => {
+  show('invoiceCenter');
+});
+
+$('homeProjectsBtn')?.addEventListener('click', () => {
+  show('projectCenter');
+});};
 $('newProjectBtn').onclick=()=>show('projectForm');
 $('companyProfileBtn').onclick=()=>openCompanyProfile();
 $('backFromCompanyProfile').onclick=()=>show('home');

@@ -209,7 +209,7 @@ function renderInvoiceCenter(){
   container.innerHTML = html;
 }
 
-let projectCenterMode='active';let projectCenterMode='active';
+let projectCenterMode='active';
 function isFinishedProject(p){return ['finished','complete','completed','closed'].includes(String(p.status||'active').toLowerCase());}
 function renderProjectCenter(){
   const active=state.projects.filter(p=>!isFinishedProject(p)), finished=state.projects.filter(isFinishedProject);

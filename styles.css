@@ -172,3 +172,69 @@ main{padding-bottom:calc(82px + env(safe-area-inset-bottom,0px))}
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+/* STEP 1.A — MOBILE QUICK ACTIONS */
+
+.home-welcome {
+  margin-bottom: 24px;
+}
+
+.quick-actions-section,
+.home-manage-section {
+  margin-top: 24px;
+}
+
+.quick-actions-heading {
+  margin-bottom: 14px;
+}
+
+.quick-action-grid,
+.home-action-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.home-action-card {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px;
+  text-align: left;
+  border-radius: 16px;
+  cursor: pointer;
+}
+
+.home-action-card > span:nth-child(2) {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.home-action-card strong {
+  font-size: 16px;
+}
+
+.home-action-card small {
+  font-size: 13px;
+  opacity: 0.75;
+}
+
+.home-icon {
+  font-size: 24px;
+  min-width: 30px;
+  text-align: center;
+}
+
+.home-action-card b {
+  font-size: 20px;
+}
+
+@media (min-width: 700px) {
+  .quick-action-grid,
+  .home-action-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

@@ -222,9 +222,59 @@
           <div class="card-title-row"><h3>Create invoice</h3><button id="closeInvoiceForm" class="ghost">✕</button></div>
           <label>Send invoice to<input id="invoiceClientEmail" type="email" placeholder="client@company.com" /></label>
           <div class="two-col"><label>Invoice #<input id="invoiceNumber" placeholder="INV-001" /></label><label>Invoice date<input id="invoiceDate" type="date" /></label></div>
-          <div class="two-col"><label>Due date<input id="invoiceDueDate" type="date" /></label><label>Amount ($)<input id="invoiceAmount" type="number" min="0" step="0.01" placeholder="25000" /></label></div>
-          <label>Description / billing period<textarea id="invoiceDescription" rows="4" placeholder="Progress billing through September 2026…"></textarea></label>
-          <div class="two-col"><label>Retainage ($)<input id="invoiceRetainage" type="number" min="0" step="0.01" value="0" /></label><label>Status<select id="invoiceStatus"><option value="invoiced">Invoiced</option><option value="paid">Paid</option></select></label></div>
+          <div class="two-col">
+  <label>Due date
+    <input id="invoiceDueDate" type="date" />
+  </label>
+
+  <label>Invoice total ($)
+    <input id="invoiceAmount" type="number" min="0" step="0.01" value="0" readonly />
+  </label>
+</div>
+
+<div class="invoice-line-items">
+  <div class="card-title-row">
+    <h3>Line Items</h3>
+    <button id="addInvoiceLineItemBtn" type="button" class="secondary compact">
+      + Add Line Item
+    </button>
+  </div>
+
+  <div id="invoiceLineItems">
+    <div class="invoice-line-item">
+
+      <label>Type
+        <select class="invoice-line-type">
+          <option value="general">General Scope</option>
+          <option value="hourly">Hourly</option>
+          <option value="material">Material</option>
+          <option value="change_order">Change Order</option>
+        </select>
+      </label>
+
+      <label>Description
+        <textarea
+          class="invoice-line-description"
+          rows="3"
+          placeholder="Describe the work or charge..."
+        ></textarea>
+      </label>
+
+      <label>Amount ($)
+        <input
+          class="invoice-line-amount"
+          type="number"
+          min="0"
+          step="0.01"
+          value="0"
+        />
+      </label>
+
+    </div>
+  </div>
+</div>
+
+<input id="invoiceDescription" type="hidden" value="" />          <div class="two-col"><label>Retainage ($)<input id="invoiceRetainage" type="number" min="0" step="0.01" value="0" /></label><label>Status<select id="invoiceStatus"><option value="invoiced">Invoiced</option><option value="paid">Paid</option></select></label></div>
           <button id="saveInvoiceBtn" class="primary">Create invoice</button>
         </div>
       </section>

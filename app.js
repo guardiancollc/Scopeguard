@@ -358,6 +358,140 @@ document.querySelector('[data-project-tab="billing"]')?.addEventListener('click'
 $('backToBillingProject').onclick=()=>show('projectDetail');
 $('newInvoiceBtn').onclick=()=>{$('invoiceForm').classList.remove('hidden');$('invoiceNumber').value=`INV-${String((project()?.invoices||[]).length+1).padStart(3,'0')}`;$('invoiceDate').value=isoDate();$('invoiceDueDate').value='';$('invoiceAmount').value='';$('invoiceDescription').value='';$('invoiceClientEmail').value=project()?.clientEmail||'';$('invoiceRetainage').value=0;$('invoiceStatus').value='invoiced';};
 $('closeInvoiceForm').onclick=()=>$('invoiceForm').classList.add('hidden');
+// MULTI-LINE INVOICE ITEMS
+
+function updateInvoiceTotal() {
+  const amounts = document.querySelectorAll('.invoice-line-amount');
+  let total = 0;
+
+  amounts.forEach((input) => {
+    total += Number(input.value) || 0;
+  });
+
+  const totalInput = $('invoiceAmount');
+
+  if (totalInput) {
+    totalInput.value = total.toFixed(2);
+  }
+}
+
+function createInvoiceLineItem() {
+  const row = document.createElement('div');
+  row.className = 'invoice-line-item';
+
+  row.innerHTML = `
+    <label>
+      Type
+      <select class="invoice-line-type">
+        <option value="general">General Scope</option>
+        <option value="hourly">Hourly</option>
+        <option value="material">Material</option>
+        <option value="change_order">Change Order</option>
+      </select>
+    </label>
+
+    <label>
+      Description
+      <textarea
+        class="invoice-line-description"
+        rows="3"
+        placeholder="Describe the work or charge..."
+      ></textarea>
+    </label>
+
+    <label>
+      Amount ($)
+      <input
+        class="invoice-line-amount"
+        type="number"
+        min="0"
+        step="0.01"
+        value="0"
+      />
+    </label>
+
+    <button
+      type="button"
+      class="secondary compact remove-invoice-line-item"
+    >
+      Remove Line Item
+    </button>
+  `;
+
+  return row;
+}
+
+$('addInvoiceLineItemBtn')?.addEventListener('click', () => {
+  const container = $('invoiceLineItems');
+
+  if (!container) return;
+
+  container.appendChild(createInvoiceLineItem());
+  updateInvoiceTotal();
+});
+
+$('invoiceLineItems')?.addEventListener('input', (event) => {
+  if (event.target.classList.contains('invoice-line-amount')) {
+    updateInvoiceTotal();
+  }
+});
+
+$('invoiceLineItems')?.addEventListener('click', (event) => {
+  const removeButton = event.target.closest('.remove-invoice-line-item');
+
+  if (!removeButton) return;
+
+  const row = removeButton.closest('.invoice-line-item');
+
+  if (row) {
+    row.remove();
+    updateInvoiceTotal();
+  }
+});
+
+function getInvoiceLineItems() {
+  return Array.from(document.querySelectorAll('.invoice-line-item'))
+    .map((row) => ({
+      type: row.querySelector('.invoice-line-type')?.value || 'general',
+      description:
+        row.querySelector('.invoice-line-description')?.value.trim() || '',
+      amount:
+        Number(row.querySelector('.invoice-line-amount')?.value) || 0
+    }))
+    .filter((item) => item.description || item.amount > 0);
+}
+
+function syncInvoiceLineItemsForSave() {
+  const items = getInvoiceLineItems();
+  const descriptionInput = $('invoiceDescription');
+
+  if (descriptionInput) {
+    descriptionInput.value = items
+      .map((item) => {
+        const typeName = {
+          general: 'General Scope',
+          hourly: 'Hourly',
+          material: 'Material',
+          change_order: 'Change Order'
+        }[item.type] || item.type;
+
+        return `${typeName}: ${item.description} - $${item.amount.toFixed(2)}`;
+      })
+      .join('\n');
+  }
+
+  updateInvoiceTotal();
+
+  return items;
+}
+
+$('invoiceLineItems')?.addEventListener('change', () => {
+  syncInvoiceLineItemsForSave();
+});
+
+updateInvoiceTotal();
+
+// END MULTI-LINE INVOICE ITEMS
 $('saveInvoiceBtn').onclick=async()=>{
   const p=project();if(!p)return;const amount=Number($('invoiceAmount').value||0);if(amount<=0)return alert('Enter an invoice amount.');
   const email=$('invoiceClientEmail').value.trim(); const clientName=String(p.customer||'').trim()||'Customer';

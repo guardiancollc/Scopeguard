@@ -643,7 +643,73 @@ $('homeInvoicesBtn')?.addEventListener('click', () => {
 $('homeProjectsBtn')?.addEventListener('click', () => {
   show('projectCenter');
 });
-$('quickNewInvoiceBtn')?.addEventListener('click', () => {
+$('homePhotosBtn')?.addEventListener('click', () => {
+  show('projectPhotos');
+  renderProjectPhotoFolders();
+});
+
+$('backFromProjectPhotos')?.addEventListener('click', () => {
+  show('home');
+});
+
+$('backToProjectPhotos')?.addEventListener('click', () => {
+  show('projectPhotos');
+  renderProjectPhotoFolders();
+});
+
+function renderProjectPhotoFolders() {
+  const container = $('photoProjectFolders');
+  if (!container) return;
+
+  const search = ($('photoProjectSearch')?.value || '')
+    .trim()
+    .toLowerCase();
+
+  const projects = (state.projects || []).filter(p =>
+    !search ||
+    String(p.name || '').toLowerCase().includes(search) ||
+    String(p.customer || '').toLowerCase().includes(search)
+  );
+
+  container.innerHTML = projects.length
+    ? projects.map(p => `
+        <button
+          class="home-action-card photo-project-folder"
+          onclick="openProjectPhotoFolder('${p.id}')"
+        >
+          <span class="home-icon">📁</span>
+
+          <span>
+            <strong>${escapeHtml(p.name || 'Unnamed Project')}</strong>
+            <small>${escapeHtml(p.customer || 'Project photo folder')}</small>
+          </span>
+
+          <b>›</b>
+        </button>
+      `).join('')
+    : `
+        <div class="card">
+          <strong>No projects found</strong>
+          <p class="muted">
+            Create a project first and its photo folder will appear here automatically.
+          </p>
+        </div>
+      `;
+}
+
+$('photoProjectSearch')?.addEventListener('input', renderProjectPhotoFolders);
+
+window.openProjectPhotoFolder = function(projectId) {
+  state.activeProjectId = projectId;
+
+  const p = state.projects.find(project => project.id === projectId);
+  if (!p) return;
+
+  $('photoFolderProjectName').textContent = p.name || 'Project';
+  $('photoFolderCount').textContent = '0 photos';
+
+  show('projectPhotoFolder');
+};$('quickNewInvoiceBtn')?.addEventListener('click', () => {
   let chooser = $('quickInvoiceClientChooser');
 
   if (!chooser) {

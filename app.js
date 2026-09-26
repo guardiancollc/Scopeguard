@@ -493,7 +493,8 @@ updateInvoiceTotal();
 
 // END MULTI-LINE INVOICE ITEMS
 $('saveInvoiceBtn').onclick=async()=>{
-  const p=project();if(!p)return;const amount=Number($('invoiceAmount').value||0);if(amount<=0)return alert('Enter an invoice amount.');
+  const lineItems = syncInvoiceLineItemsForSave();
+if (!lineItems.length) return alert('Add at least one invoice line item.');  const p=project();if(!p)return;const amount=Number($('invoiceAmount').value||0);if(amount<=0)return alert('Enter an invoice amount.');
   const email=$('invoiceClientEmail').value.trim(); const clientName=String(p.customer||'').trim()||'Customer';
   let client=(state.clients||[]).find(c=>String(c.name||'').trim().toLowerCase()===clientName.toLowerCase() || (email&&String(c.email||'').trim().toLowerCase()===email.toLowerCase()));
   if(!client){

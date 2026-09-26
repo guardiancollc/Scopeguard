@@ -717,7 +717,7 @@ if (!lineItems.length) return alert('Add at least one invoice line item.');  con
   retainage:Number($('invoiceRetainage').value||0),
   status:$('invoiceStatus').value,
   paidAmount:$('invoiceStatus').value==='paid'?amount:0
-};  if(cloudEnabled&&session){const row={project_id:p.id,created_by:session.user.id,invoice_number:inv.number,invoice_date:inv.date,due_date:inv.dueDate||null,description:inv.description,client_email:inv.clientEmail||null,amount:inv.amount,retainage:inv.retainage,status:inv.status,paid_amount:inv.paidAmount};const {data,error}=await db.from('invoices').insert(row).select().single();if(error)return alert(error.message);inv.id=data.id;}
+};  if(cloudEnabled&&session){const row={project_id:p.id,created_by:session.user.id,invoice_number:inv.number,invoice_date:inv.date,due_date:inv.dueDate||null,description:inv.description,line_items:inv.lineItems,client_email:inv.clientEmail||null,amount:inv.amount,retainage:inv.retainage,status:inv.status,paid_amount:inv.paidAmount};const {data,error}=await db.from('invoices').insert(row).select().single();if(error)return alert(error.message);inv.id=data.id;}
   p.invoices=p.invoices||[];p.invoices.push(inv);cache();$('invoiceForm').classList.add('hidden');renderBilling();renderProject();
 };
 document.querySelectorAll('.back').forEach(b=>b.onclick=()=>show('projectCenter'));

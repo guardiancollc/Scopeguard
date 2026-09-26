@@ -131,6 +131,65 @@
   </div>
 </section>
 
+<!-- PROJECT PHOTOS -->
+<section id="projectPhotos" class="screen hidden">
+
+  <button id="backFromProjectPhotos" class="ghost">← Home</button>
+
+  <div class="section-head">
+    <div>
+      <span class="eyebrow">PROJECT PHOTOS</span>
+      <h2>Project Photo Library</h2>
+      <p class="muted">Photos organized by project and date.</p>
+    </div>
+  </div>
+
+  <div class="project-search-wrap">
+    <input
+      id="photoProjectSearch"
+      type="search"
+      placeholder="Search projects..."
+    />
+  </div>
+
+  <div id="photoProjectFolders" class="photo-project-folders"></div>
+
+</section>
+
+<!-- INDIVIDUAL PROJECT PHOTO FOLDER -->
+<section id="projectPhotoFolder" class="screen hidden">
+
+  <button id="backToProjectPhotos" class="ghost">
+    ← Project Photos
+  </button>
+
+  <div class="section-head">
+    <div>
+      <span class="eyebrow">PHOTO FOLDER</span>
+      <h2 id="photoFolderProjectName">Project</h2>
+      <p id="photoFolderCount" class="muted">0 photos</p>
+    </div>
+
+    <div>
+      <button id="uploadProjectPhotosBtn" class="primary">
+        + Upload Photos
+      </button>
+
+      <input
+        id="projectPhotoUpload"
+        type="file"
+        accept="image/*"
+        multiple
+        hidden
+      />
+    </div>
+  </div>
+
+  <div id="projectPhotoGallery" class="project-photo-gallery"></div>
+
+</section>
+<!-- END PROJECT PHOTOS -->
+
 <section id="clients" class="screen hidden">      
       <section id="clients" class="screen hidden">
         <button id="backFromClients" class="ghost">← Home</button>

@@ -366,19 +366,7 @@ window.markInvoicePaid=async(id)=>{
   const p=project(),i=(p?.invoices||[]).find(x=>x.id===id);if(!i)return;
   if(i.status==='paid')return;
   if(!confirm(`Mark ${i.number} as paid in full (${money(i.amount)})?`))return;
-  const inv={
-  id:uid(),
-  number:$('invoiceNumber').value.trim()||`INV-${Date.now()}`,
-  date:$('invoiceDate').value||isoDate(),
-  dueDate:$('invoiceDueDate').value||'',
-  description:$('invoiceDescription').value.trim(),
-  lineItems:lineItems,
-  clientEmail:p.clientEmail,
-  amount,
-  retainage:Number($('invoiceRetainage').value||0),
-  status:$('invoiceStatus').value,
-  paidAmount:$('invoiceStatus').value==='paid'?amount:0
-};  if(cloudEnabled&&session){const {error}=await db.from('invoices').update({status:'paid',paid_amount:i.amount}).eq('id',id);if(error)return alert(error.message);}
+ };  if(cloudEnabled&&session){const {error}=await db.from('invoices').update({status:'paid',paid_amount:i.amount}).eq('id',id);if(error)return alert(error.message);}
   i.status='paid';i.paidAmount=i.amount;cache();
   renderBilling();renderProject();renderInvoiceCenter();if(activeClientId)renderClientDetail();
   if(activeInvoiceId===id){$('invoicePreviewDocument').innerHTML=invoiceHtml(p,i);updatePreviewPaidButton(i);}
@@ -703,7 +691,19 @@ $('saveProjectBtn').onclick=async()=>{
     const matchedClient=(state.clients||[]).find(c=>c.name.trim().toLowerCase()===local.customer.trim().toLowerCase()); if(matchedClient)local.clientId=matchedClient.id;
     const row={company_id:state.company.id,name:local.name,customer:local.customer,client_id:local.clientId||null,client_email:local.clientEmail||null,contract_value:local.contractValue,original_scope:local.scope,labor_budget:local.laborBudget,material_budget:local.materialBudget,extra_markup:local.markup,default_labor_rate:local.defaultLaborRate};
     const {data,error}=await db.from('projects').insert(row).select().single();
-    if(error){setSync('Sync error','offline');return alert(error.message);} local.id=data.id; setSync('Cloud synced','cloud');
+   const inv={
+  id:uid(),
+  number:$('invoiceNumber').value.trim()||`INV-${Date.now()}`,
+  date:$('invoiceDate').value||isoDate(),
+  dueDate:$('invoiceDueDate').value||'',
+  description:$('invoiceDescription').value.trim(),
+  lineItems:lineItems,
+  clientEmail:p.clientEmail,
+  amount,
+  retainage:Number($('invoiceRetainage').value||0),
+  status:$('invoiceStatus').value,
+  paidAmount:$('invoiceStatus').value==='paid'?amount:0
+};    if(error){setSync('Sync error','offline');return alert(error.message);} local.id=data.id; setSync('Cloud synced','cloud');
   }
   state.projects.push(local);state.activeProjectId=local.id;cache();show('projectDetail');
 };

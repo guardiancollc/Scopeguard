@@ -2156,7 +2156,7 @@ $('saveInvoiceBtn').onclick=async()=>{
   if(!number)return alert('Enter an invoice number.');
   if(amount<=0)return alert('Add at least one invoice line item amount.');
   const id=uid();
-  if(cloudEnabled&&session){const {error}=await db.from('invoices').insert({id,company_id:state.company.id,project_id:p.id,invoice_number:number,invoice_date:date,due_date:dueDate,description,line_items:lineItems,amount,retainage,status,paid_amount:status==='paid'?amount:0,client_email:clientEmail||null});if(error)return alert(error.message);}
+  if(cloudEnabled&&session){const {error}=await db.from('invoices').insert({id,company_id:state.company.id,project_id:p.id,created_by:session.user.id,invoice_number:number,invoice_date:date,due_date:dueDate,description,line_items:lineItems,amount,retainage,status,paid_amount:status==='paid'?amount:0,client_email:clientEmail||null});if(error)return alert(error.message);}
   p.invoices=p.invoices||[];p.invoices.push({id,number,date,dueDate:dueDate||'',description,lineItems,amount,retainage,status,paidAmount:status==='paid'?amount:0,clientEmail});if(clientEmail)p.clientEmail=clientEmail;cache();$('invoiceForm').classList.add('hidden');renderBilling();renderProject();
 };
 

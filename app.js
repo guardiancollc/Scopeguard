@@ -709,7 +709,109 @@ window.openProjectPhotoFolder = function(projectId) {
   $('photoFolderCount').textContent = '0 photos';
 
   show('projectPhotoFolder');
-};$('quickNewInvoiceBtn')?.addEventListener('click', () => {
+};
+// PROJECT PHOTO UPLOAD
+$('uploadProjectPhotosBtn')?.addEventListener('click', () => {
+  const input = $('projectPhotoUpload');
+  if (!input) return;
+
+  input.value = '';
+  input.click();
+});
+
+$('projectPhotoUpload')?.addEventListener('change', async (event) => {
+  const files = Array.from(event.target.files || []);
+
+  if (!files.length) return;
+
+  const p = project();
+
+  if (!p) {
+    alert('Project not found.');
+    return;
+  }
+
+  if (!cloudEnabled || !session || !db) {
+    alert('Cloud connection is required to upload project photos.');
+    return;
+  }
+
+  const button = $('uploadProjectPhotosBtn');
+  const originalText = button?.textContent || '+ Upload Photos';
+
+  if (button) {
+    button.disabled = true;
+    button.textContent = `Uploading ${files.length} photo${files.length === 1 ? '' : 's'}…`;
+  }
+
+  try {
+    for (const file of files) {
+      if (!file.type.startsWith('image/')) continue;
+
+      if (file.size > 12_000_000) {
+        alert(`${file.name} is larger than 12 MB and was skipped.`);
+        continue;
+      }
+
+      const photoId = uid();
+
+      const photoDate = file.lastModified
+        ? new Date(file.lastModified)
+        : new Date();
+
+      const dateKey = photoDate.toISOString().slice(0, 10);
+
+      const path =
+        `${session.user.id}/${state.company.id}/${p.id}/project-photos/${dateKey}/${photoId}-${safeName(file.name)}`;
+
+      const { error: uploadError } = await db.storage
+        .from('scopeguard-evidence')
+        .upload(path, file, {
+          contentType: file.type || 'image/jpeg',
+          upsert: false
+        });
+
+      if (uploadError) throw uploadError;
+
+      const { data: evidenceRow, error: evidenceError } = await db
+        .from('evidence')
+        .insert({
+          company_id: state.company.id,
+          project_id: p.id,
+          storage_path: path,
+          mime_type: file.type || 'image/jpeg',
+          created_by: session.user.id
+        })
+        .select()
+        .single();
+
+      if (evidenceError) {
+        await db.storage
+          .from('scopeguard-evidence')
+          .remove([path]);
+
+        throw evidenceError;
+      }
+    }
+
+    alert(
+      `${files.length} photo${files.length === 1 ? '' : 's'} uploaded successfully.`
+    );
+
+    await renderProjectPhotoGallery();
+
+  } catch (error) {
+    console.error('Project photo upload failed:', error);
+    alert(`Photo upload failed: ${error.message || 'Unknown error'}`);
+  } finally {
+    if (button) {
+      button.disabled = false;
+      button.textContent = originalText;
+    }
+
+    event.target.value = '';
+  }
+});$('quickNewInvoiceBtn')?.addEventListener('click', () => {
   let chooser = $('quickInvoiceClientChooser');
 
   if (!chooser) {

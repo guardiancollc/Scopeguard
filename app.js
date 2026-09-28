@@ -916,13 +916,7 @@ async function renderProjectPhotoGallery() {
     title="Click to view full size"
   >`                : `<p class="muted">Photo unavailable</p>`
             }
-<button
-  type="button"
-  onclick="event.stopPropagation(); deleteProjectPhoto('${photo.id}', '${photo.storage_path}')"
-  style="margin-top:10px;width:100%;padding:10px;border:1px solid #ef4444;border-radius:10px;background:transparent;color:#ef4444;font-weight:700;cursor:pointer;"
->
-  Delete Photo
-</button>          </div>
+          </div>
         `;
       }
 
@@ -944,7 +938,7 @@ async function renderProjectPhotoGallery() {
       </div>
     `;
   }
-  $('quickNewInvoiceBtn')?.addEventListener('click', () => {
+}$('quickNewInvoiceBtn')?.addEventListener('click', () => {
   let chooser = $('quickInvoiceClientChooser');
 
   if (!chooser) {

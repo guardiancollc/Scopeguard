@@ -905,20 +905,51 @@ async function renderProjectPhotoGallery() {
   }
 
   const imageUrl = signedData?.signedUrl || '';        html += `
-          <div class="card photo-card">
-            ${
-              imageUrl
-                ? `<img
-    src="${imageUrl}"
-    alt="Project photo"
-    onclick="window.open('${imageUrl}', '_blank')"
-    style="width:100%;height:220px;object-fit:cover;border-radius:12px;cursor:pointer;"
-    title="Click to view full size"
-  >`                : `<p class="muted">Photo unavailable</p>`
-            }
-          </div>
-        `;
-      }
+          window.deleteProjectPhoto = async function(photoId, storagePath) {
+  if (!photoId || !storagePath) return;
+
+  const confirmed = window.confirm(
+    'Delete this photo permanently? This cannot be undone.'
+  );
+
+  if (!confirmed) return;
+
+  try {
+    if (!cloudEnabled || !session || !db) {
+      alert('Cloud connection is required to delete project photos.');
+      return;
+    }
+
+    // Delete the actual image from Supabase Storage
+    const { error: storageError } = await db.storage
+      .from('scopeguard-evidence')
+      .remove([storagePath]);
+
+    if (storageError) {
+      throw storageError;
+    }
+
+    // Delete the database record
+    const { error: databaseError } = await db
+      .from('evidence')
+      .delete()
+      .eq('id', photoId)
+      .eq('company_id', state.company.id);
+
+    if (databaseError) {
+      throw databaseError;
+    }
+
+    // Refresh gallery
+    await renderProjectPhotoGallery();
+
+  } catch (error) {
+    console.error('Project photo delete failed:', error);
+    alert(
+      `Photo delete failed: ${error.message || 'Unknown error'}`
+    );
+  }
+};      }
 
       html += `
           </div>

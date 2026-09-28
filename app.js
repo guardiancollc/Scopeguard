@@ -811,7 +811,129 @@ $('projectPhotoUpload')?.addEventListener('change', async (event) => {
 
     event.target.value = '';
   }
-});$('quickNewInvoiceBtn')?.addEventListener('click', () => {
+});
+async function renderProjectPhotoGallery() {
+  const projectId = state.activeProjectId;
+  if (!projectId) return;
+
+  const p = state.projects.find(project => project.id === projectId);
+  if (!p) return;
+
+  const gallery = $('projectPhotoGallery');
+  if (!gallery) return;
+
+  gallery.innerHTML = `
+    <div class="card">
+      <p class="muted">Loading project photos...</p>
+    </div>
+  `;
+
+  try {
+    if (!cloudEnabled || !session || !db) {
+      gallery.innerHTML = `
+        <div class="card">
+          <p class="muted">Cloud connection is required to view project photos.</p>
+        </div>
+      `;
+      return;
+    }
+
+    const { data: photos, error } = await db
+      .from('evidence')
+      .select('*')
+      .eq('company_id', state.company.id)
+      .eq('project_id', projectId)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    const rows = photos || [];
+
+    const count = $('photoFolderCount');
+    if (count) {
+      count.textContent = `${rows.length} photo${rows.length === 1 ? '' : 's'}`;
+    }
+
+    if (!rows.length) {
+      gallery.innerHTML = `
+        <div class="card">
+          <strong>No photos yet</strong>
+          <p class="muted">Upload photos and they will appear here organized by date.</p>
+        </div>
+      `;
+      return;
+    }
+
+    const grouped = {};
+
+    rows.forEach(photo => {
+      const date = new Date(photo.created_at || Date.now());
+      const key = date.toLocaleDateString(undefined, {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+
+      if (!grouped[key]) grouped[key] = [];
+      grouped[key].push(photo);
+    });
+
+    let html = '';
+
+    for (const [date, items] of Object.entries(grouped)) {
+      html += `
+        <section class="photo-date-group">
+          <div class="invoice-group-head">
+            <h3>${date}</h3>
+            <span class="count">
+              ${items.length} photo${items.length === 1 ? '' : 's'}
+            </span>
+          </div>
+
+          <div class="photo-grid">
+      `;
+
+      for (const photo of items) {
+        const { data } = db.storage
+          .from('scopeguard-evidence')
+          .getPublicUrl(photo.storage_path);
+
+        const imageUrl = data?.publicUrl || '';
+
+        html += `
+          <div class="card photo-card">
+            ${
+              imageUrl
+                ? `<img
+                    src="${imageUrl}"
+                    alt="Project photo"
+                    style="width:100%;height:220px;object-fit:cover;border-radius:12px;"
+                   >`
+                : `<p class="muted">Photo unavailable</p>`
+            }
+          </div>
+        `;
+      }
+
+      html += `
+          </div>
+        </section>
+      `;
+    }
+
+    gallery.innerHTML = html;
+
+  } catch (error) {
+    console.error('Project photo gallery failed:', error);
+
+    gallery.innerHTML = `
+      <div class="card">
+        <strong>Unable to load photos</strong>
+        <p class="muted">${error.message || 'Unknown error'}</p>
+      </div>
+    `;
+  }
+}$('quickNewInvoiceBtn')?.addEventListener('click', () => {
   let chooser = $('quickInvoiceClientChooser');
 
   if (!chooser) {

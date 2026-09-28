@@ -904,7 +904,8 @@ async function renderProjectPhotoGallery() {
     console.error('Could not load project photo:', signedError);
   }
 
-  const imageUrl = signedData?.signedUrl || '';        html += `
+  const imageUrl = signedData?.signedUrl || '';        
+        html += `
   <div class="card photo-card">
     ${
       imageUrl

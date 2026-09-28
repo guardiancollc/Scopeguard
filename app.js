@@ -896,13 +896,15 @@ async function renderProjectPhotoGallery() {
       `;
 
       for (const photo of items) {
-        const { data } = db.storage
-          .from('scopeguard-evidence')
-          .getPublicUrl(photo.storage_path);
+  const { data: signedData, error: signedError } = await db.storage
+    .from('scopeguard-evidence')
+    .createSignedUrl(photo.storage_path, 3600);
 
-        const imageUrl = data?.publicUrl || '';
+  if (signedError) {
+    console.error('Could not load project photo:', signedError);
+  }
 
-        html += `
+  const imageUrl = signedData?.signedUrl || '';        html += `
           <div class="card photo-card">
             ${
               imageUrl

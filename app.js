@@ -944,8 +944,7 @@ async function renderProjectPhotoGallery() {
       </div>
     `;
   }
-  
-$('quickNewInvoiceBtn')?.addEventListener('click', () => {
+  $('quickNewInvoiceBtn')?.addEventListener('click', () => {
   let chooser = $('quickInvoiceClientChooser');
 
   if (!chooser) {

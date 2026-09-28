@@ -699,16 +699,18 @@ function renderProjectPhotoFolders() {
 
 $('photoProjectSearch')?.addEventListener('input', renderProjectPhotoFolders);
 
-window.openProjectPhotoFolder = function(projectId) {
+window.openProjectPhotoFolder = async function(projectId) {
   state.activeProjectId = projectId;
 
   const p = state.projects.find(project => project.id === projectId);
   if (!p) return;
 
   $('photoFolderProjectName').textContent = p.name || 'Project';
-  $('photoFolderCount').textContent = '0 photos';
+  $('photoFolderCount').textContent = 'Loading photos...';
 
   show('projectPhotoFolder');
+
+  await renderProjectPhotoGallery();
 };
 // PROJECT PHOTO UPLOAD
 $('uploadProjectPhotosBtn')?.addEventListener('click', () => {

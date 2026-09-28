@@ -905,7 +905,6 @@ async function renderProjectPhotoGallery() {
   }
 
   const imageUrl = signedData?.signedUrl || '';        html += `
-    html += `
   <div class="card photo-card">
     ${
       imageUrl

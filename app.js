@@ -944,7 +944,47 @@ async function renderProjectPhotoGallery() {
       </div>
     `;
   }
-}$('quickNewInvoiceBtn')?.addEventListener('click', () => {
+  window.deleteProjectPhoto = async function(photoId, storagePath) {
+  if (!photoId || !storagePath) return;
+
+  const confirmed = window.confirm(
+    'Delete this photo permanently? This cannot be undone.'
+  );
+
+  if (!confirmed) return;
+
+  try {
+    if (!cloudEnabled || !session || !db) {
+      alert('Cloud connection is required to delete project photos.');
+      return;
+    }
+
+    const { error: storageError } = await db.storage
+      .from('scopeguard-evidence')
+      .remove([storagePath]);
+
+    if (storageError) {
+      throw storageError;
+    }
+
+    const { error: databaseError } = await db
+      .from('evidence')
+      .delete()
+      .eq('id', photoId)
+      .eq('company_id', state.company.id);
+
+    if (databaseError) {
+      throw databaseError;
+    }
+
+    await renderProjectPhotoGallery();
+
+  } catch (error) {
+    console.error('Project photo delete failed:', error);
+    alert(`Photo delete failed: ${error.message || 'Unknown error'}`);
+  }
+};
+$('quickNewInvoiceBtn')?.addEventListener('click', () => {
   let chooser = $('quickInvoiceClientChooser');
 
   if (!chooser) {

@@ -852,15 +852,19 @@ async function renderProjectPhotoGallery() {
     const rows = photos || [];
 
     const count = $('photoFolderCount');
+
     if (count) {
-      count.textContent = `${rows.length} photo${rows.length === 1 ? '' : 's'}`;
+      count.textContent =
+        `${rows.length} photo${rows.length === 1 ? '' : 's'}`;
     }
 
     if (!rows.length) {
       gallery.innerHTML = `
         <div class="card">
           <strong>No photos yet</strong>
-          <p class="muted">Upload photos and they will appear here organized by date.</p>
+          <p class="muted">
+            Upload photos and they will appear here organized by date.
+          </p>
         </div>
       `;
       return;
@@ -870,23 +874,30 @@ async function renderProjectPhotoGallery() {
 
     rows.forEach(photo => {
       const date = new Date(photo.created_at || Date.now());
+
       const key = date.toLocaleDateString(undefined, {
         year: 'numeric',
         month: 'long',
         day: 'numeric'
       });
 
-      if (!grouped[key]) grouped[key] = [];
+      if (!grouped[key]) {
+        grouped[key] = [];
+      }
+
       grouped[key].push(photo);
     });
 
     let html = '';
 
     for (const [date, items] of Object.entries(grouped)) {
+
       html += `
         <section class="photo-date-group">
+
           <div class="invoice-group-head">
             <h3>${date}</h3>
+
             <span class="count">
               ${items.length} photo${items.length === 1 ? '' : 's'}
             </span>
@@ -896,30 +907,52 @@ async function renderProjectPhotoGallery() {
       `;
 
       for (const photo of items) {
-  const { data: signedData, error: signedError } = await db.storage
-    .from('scopeguard-evidence')
-    .createSignedUrl(photo.storage_path, 3600);
 
-  if (signedError) {
-    console.error('Could not load project photo:', signedError);
-  }
+        const { data: signedData, error: signedError } =
+          await db.storage
+            .from('scopeguard-evidence')
+            .createSignedUrl(photo.storage_path, 3600);
 
-  const imageUrl = signedData?.signedUrl || '';        
+        if (signedError) {
+          console.error(
+            'Could not load project photo:',
+            signedError
+          );
+        }
+
+        const imageUrl = signedData?.signedUrl || '';
+
         html += `
-  <div class="card photo-card">
-    ${
-      imageUrl
-        ? `<img
-            src="${imageUrl}"
-            alt="Project photo"
-            onclick="window.open('${imageUrl}', '_blank')"
-            style="width:100%;height:220px;object-fit:cover;border-radius:12px;cursor:pointer;"
-            title="Click to view full size"
-          >`
-        : `<p class="muted">Photo unavailable</p>`
-    }
-  </div>
-`;
+          <div class="card photo-card">
+
+            ${
+              imageUrl
+                ? `
+                  <img
+                    src="${imageUrl}"
+                    alt="Project photo"
+                    onclick="window.open('${imageUrl}', '_blank')"
+                    style="
+                      width:100%;
+                      height:220px;
+                      object-fit:cover;
+                      border-radius:12px;
+                      cursor:pointer;
+                    "
+                    title="Click to view full size"
+                  >
+                `
+                : `
+                  <p class="muted">
+                    Photo unavailable
+                  </p>
+                `
+            }
+
+          </div>
+        `;
+      }
+
       html += `
           </div>
         </section>
@@ -929,16 +962,22 @@ async function renderProjectPhotoGallery() {
     gallery.innerHTML = html;
 
   } catch (error) {
-    console.error('Project photo gallery failed:', error);
+
+    console.error(
+      'Project photo gallery failed:',
+      error
+    );
 
     gallery.innerHTML = `
       <div class="card">
         <strong>Unable to load photos</strong>
-        <p class="muted">${error.message || 'Unknown error'}</p>
+        <p class="muted">
+          ${error.message || 'Unknown error'}
+        </p>
       </div>
     `;
   }
-}$('quickNewInvoiceBtn')?.addEventListener('click', () => {
+}}$('quickNewInvoiceBtn')?.addEventListener('click', () => {
   let chooser = $('quickInvoiceClientChooser');
 
   if (!chooser) {

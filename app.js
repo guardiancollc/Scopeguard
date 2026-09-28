@@ -909,11 +909,12 @@ async function renderProjectPhotoGallery() {
             ${
               imageUrl
                 ? `<img
-                    src="${imageUrl}"
-                    alt="Project photo"
-                    style="width:100%;height:220px;object-fit:cover;border-radius:12px;"
-                   >`
-                : `<p class="muted">Photo unavailable</p>`
+    src="${imageUrl}"
+    alt="Project photo"
+    onclick="window.open('${imageUrl}', '_blank')"
+    style="width:100%;height:220px;object-fit:cover;border-radius:12px;cursor:pointer;"
+    title="Click to view full size"
+  >`                : `<p class="muted">Photo unavailable</p>`
             }
           </div>
         `;

@@ -643,7 +643,10 @@ function renderProject(){
           </div>
           <div class="row-sub">${escapeHtml(e.reason||'Possible out-of-scope work')}</div>
         </div>
-        <button onclick="openExtra('${e.id}')">Record →</button>
+        <div class="row-actions">
+  <button onclick="openExtra('${e.id}')">Record ↗</button>
+  <button onclick="sendChangeOrder('${e.id}')">Send Change Order</button>
+</div>
       </div>
     `).join('')
     :`<p class="muted">No potential change orders.</p>`;
@@ -2617,3 +2620,122 @@ if(emailParams.get('email')){
     history.replaceState({},'',location.pathname);
   });
 }
+
+window.sendChangeOrder = async (id) => {
+  const p = project();
+  const e = (p?.extras || []).find(x => x.id === id);
+
+  if (!p || !e) {
+    return alert('Change order not found.');
+  }
+
+  if (!cloudEnabled || !session?.access_token) {
+    return alert('You must be signed in and connected to the cloud to send a change order.');
+  }
+
+  const client =
+    (state.clients || []).find(c => c.id === p.clientId) || null;
+
+  const currentEmail =
+    p.clientEmail ||
+    client?.email ||
+    '';
+
+  const to = prompt(
+    'Client email address:',
+    currentEmail
+  );
+
+  if (to === null) return;
+
+  const email = to.trim();
+
+  if (!email) {
+    return alert('Enter the client email address.');
+  }
+
+  try {
+    const approvalToken =
+      e.approvalToken ||
+      crypto.randomUUID();
+
+    const { error: tokenError } = await db
+      .from('extra_work')
+      .update({
+        approval_token: approvalToken,
+        proposed_value: Number(e.estimatedValue || 0)
+      })
+      .eq('id', e.id);
+
+    if (tokenError) throw tokenError;
+
+    e.approvalToken = approvalToken;
+    p.clientEmail = email;
+    cache();
+
+    const approvalUrl =
+      `${window.location.origin}/api/approve-change-order` +
+      `?token=${encodeURIComponent(approvalToken)}`;
+
+    const response = await fetch('/api/send-change-order', {
+      method: 'POST',
+
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`
+      },
+
+      body: JSON.stringify({
+        to: email,
+
+        changeOrder: {
+          id: e.id,
+          title: e.title || 'Change Order',
+          description:
+            e.description ||
+            e.note ||
+            e.reason ||
+            'Additional work',
+          requestedBy:
+            e.requestedBy ||
+            'Not specified',
+          amount: Number(e.estimatedValue || 0)
+        },
+
+        project: {
+          id: p.id,
+          name: p.name || 'Project',
+          customer: p.customer || ''
+        },
+
+        company: {
+          name: state.company?.name || 'ScopeGuard',
+          email: state.company?.email || '',
+          phone: state.company?.phone || '',
+          address: state.company?.address || ''
+        },
+
+        approvalUrl
+      })
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        result.error ||
+        result.message ||
+        'Could not send change order.'
+      );
+    }
+
+    alert(`Change order sent successfully to ${email}.`);
+
+  } catch (err) {
+    console.error('Send change order error:', err);
+
+    alert(
+      `Could not send change order: ${err.message || err}`
+    );
+  }
+};

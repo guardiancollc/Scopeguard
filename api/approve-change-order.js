@@ -386,50 +386,65 @@ module.exports = async (req, res) => {
           </div>
 
           <h1>
-            ${esc(changeOrder.title || 'Change Order')}
-          </h1>
+  Change Order
+</h1>
 
           <div class="project">
             ${esc(projectName)}
           </div>
 
-          <div class="row">
-            <span class="label">Prepared For</span>
-            <div class="value">
-              ${esc(customer)}
-            </div>
-          </div>
+<div style="margin-top:28px;background:#ffffff;border:1px solid #e2e8f0;border-radius:14px;overflow:hidden;color:#111827;">
 
-          <div class="row">
-            <span class="label">
-              Description of Change
-            </span>
+  <div style="padding:20px 22px;border-bottom:1px solid #e2e8f0;">
+    <div style="font-size:12px;font-weight:800;letter-spacing:1.4px;color:#64748b;">
+      PREPARED FOR
+    </div>
+    <div style="margin-top:7px;font-size:18px;font-weight:700;">
+      ${esc(customer)}
+    </div>
+  </div>
 
-            <div class="value">
-              ${esc(description)}
-            </div>
-          </div>
+  <div style="padding:20px 22px;border-bottom:1px solid #e2e8f0;">
+    <div style="font-size:12px;font-weight:800;letter-spacing:1.4px;color:#64748b;">
+      PROJECT
+    </div>
+    <div style="margin-top:7px;font-size:18px;font-weight:700;">
+      ${esc(projectName)}
+    </div>
+  </div>
 
-          <div class="row">
-            <span class="label">
-              Requested By
-            </span>
+  <div style="padding:20px 22px;border-bottom:1px solid #e2e8f0;">
+    <div style="font-size:12px;font-weight:800;letter-spacing:1.4px;color:#64748b;">
+      DESCRIPTION OF CHANGE
+    </div>
 
-            <div class="value">
-              ${esc(requestedBy)}
-            </div>
-          </div>
+    <div style="margin-top:14px;font-size:16px;line-height:1.7;white-space:pre-wrap;overflow-wrap:anywhere;word-break:normal;text-align:left;">
+${esc(description)}
+    </div>
+  </div>
 
-          <div class="total">
-            <div class="total-label">
-              CHANGE ORDER TOTAL
-            </div>
+  <div style="padding:20px 22px;">
+    <div style="font-size:12px;font-weight:800;letter-spacing:1.4px;color:#64748b;">
+      REQUESTED BY
+    </div>
 
-            <div class="total-value">
-              ${money(amount)}
-            </div>
-          </div>
+    <div style="margin-top:7px;font-size:16px;line-height:1.6;overflow-wrap:anywhere;text-align:left;">
+      ${esc(requestedBy)}
+    </div>
+  </div>
 
+</div>
+
+<div class="total">
+  <div class="total-label">
+    CHANGE ORDER TOTAL
+  </div>
+
+  <div class="total-value">
+    ${money(amount)}
+  </div>
+</div>
+          
           <div class="approval">
             <form
               method="POST"

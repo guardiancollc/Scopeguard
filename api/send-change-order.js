@@ -120,81 +120,155 @@ ${conn.email}`;
 const html = `
 <!doctype html>
 <html>
-<body style="margin:0;background:#f1f5f9;font-family:Arial,sans-serif;color:#111827">
+<body style="margin:0;padding:0;background:#f4f6f8;font-family:Arial,Helvetica,sans-serif;color:#111827;">
 
-  <div style="max-width:720px;margin:24px auto;background:white;padding:32px;border-radius:14px">
+  <div style="max-width:680px;margin:0 auto;padding:24px 12px;">
 
-    <div style="border-bottom:3px solid #111827;padding-bottom:18px">
-      <h2 style="margin:0">${esc(companyName)}</h2>
-      <div>${esc(company?.address || '')}</div>
-      <div>
-        ${esc(company?.phone || '')}
-        ${company?.phone ? ' · ' : ''}
-        ${esc(conn.email)}
-      </div>
-    </div>
+    <div style="background:#ffffff;border:1px solid #e5e7eb;border-radius:16px;overflow:hidden;">
 
-    <div style="display:flex;justify-content:space-between;gap:20px;margin-top:24px">
+      <!-- HEADER -->
+      <div style="background:#0b111b;padding:26px 30px;border-bottom:4px solid #c99720;">
+        <div style="font-size:24px;font-weight:800;color:#ffffff;letter-spacing:.3px;">
+          ${esc(companyName)}
+        </div>
 
-      <div>
-        <b>Prepared for</b><br>
-        ${esc(project.customer || 'Customer')}<br>
-        ${esc(to)}
+        <div style="margin-top:7px;font-size:13px;color:#cbd5e1;line-height:1.6;">
+          ${company?.address ? esc(company.address) + '<br>' : ''}
+          ${company?.phone ? esc(company.phone) + ' &nbsp; • &nbsp; ' : ''}
+          ${esc(conn.email)}
+        </div>
       </div>
 
-      <div style="text-align:right">
-        <b>CHANGE ORDER ${esc(changeNumber)}</b>
+      <!-- DOCUMENT TITLE -->
+      <div style="padding:30px 30px 18px 30px;">
+        <div style="font-size:12px;font-weight:800;letter-spacing:2px;color:#b8860b;">
+          CHANGE ORDER
+        </div>
+
+        <div style="margin-top:8px;font-size:26px;font-weight:800;color:#111827;">
+          Change Order Review
+        </div>
+
+        <div style="margin-top:5px;font-size:14px;color:#64748b;">
+          Please review the additional work below.
+        </div>
+      </div>
+
+      <!-- INFO -->
+      <div style="padding:0 30px 24px 30px;">
+        <table width="100%" cellpadding="0" cellspacing="0"
+          style="border-collapse:collapse;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;">
+
+          <tr>
+            <td style="padding:16px;border-bottom:1px solid #e2e8f0;">
+              <div style="font-size:11px;font-weight:800;color:#64748b;letter-spacing:1px;">
+                PREPARED FOR
+              </div>
+              <div style="margin-top:5px;font-size:16px;font-weight:700;color:#111827;">
+                ${esc(project.customer || 'Customer')}
+              </div>
+              <div style="margin-top:3px;font-size:13px;color:#64748b;">
+                ${esc(to)}
+              </div>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:16px;border-bottom:1px solid #e2e8f0;">
+              <div style="font-size:11px;font-weight:800;color:#64748b;letter-spacing:1px;">
+                PROJECT
+              </div>
+              <div style="margin-top:5px;font-size:16px;font-weight:700;color:#111827;">
+                ${esc(project.name || 'Project')}
+              </div>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:16px;">
+              <div style="font-size:11px;font-weight:800;color:#64748b;letter-spacing:1px;">
+                CHANGE ORDER
+              </div>
+              <div style="margin-top:5px;font-size:14px;color:#111827;">
+                #${esc(changeNumber)}
+              </div>
+            </td>
+          </tr>
+
+        </table>
+      </div>
+
+      <!-- DESCRIPTION -->
+      <div style="padding:0 30px 24px 30px;">
+
+        <div style="font-size:12px;font-weight:800;letter-spacing:1.4px;color:#64748b;margin-bottom:10px;">
+          DESCRIPTION OF CHANGE
+        </div>
+
+        <div style="background:#ffffff;border:1px solid #e2e8f0;border-radius:12px;padding:18px;font-size:15px;line-height:1.7;color:#1f2937;">
+          ${esc(changeOrder.description || 'Additional work')}
+        </div>
+
+        <div style="margin-top:18px;font-size:12px;font-weight:800;letter-spacing:1.4px;color:#64748b;">
+          REQUESTED BY
+        </div>
+
+        <div style="margin-top:7px;font-size:15px;font-weight:600;color:#111827;">
+          ${esc(changeOrder.requestedBy || 'Not specified')}
+        </div>
+
+      </div>
+
+      <!-- TOTAL -->
+      <div style="padding:0 30px 26px 30px;">
+
+        <div style="background:#0b111b;border-radius:14px;padding:22px;text-align:right;">
+
+          <div style="font-size:12px;font-weight:800;letter-spacing:1.4px;color:#94a3b8;">
+            CHANGE ORDER TOTAL
+          </div>
+
+          <div style="margin-top:5px;font-size:34px;font-weight:800;color:#ffffff;">
+            ${money(changeOrder.amount)}
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- APPROVAL -->
+      <div style="padding:0 30px 32px 30px;text-align:center;">
+
+        <a href="${approvalUrl}"
+          style="display:block;background:#c99720;color:#ffffff;text-decoration:none;font-size:16px;font-weight:800;letter-spacing:.5px;padding:18px 20px;border-radius:10px;">
+          APPROVE CHANGE ORDER
+        </a>
+
+        <div style="margin-top:14px;font-size:12px;line-height:1.6;color:#64748b;">
+          Selecting Approve Change Order confirms authorization for the additional work and change order amount shown above.
+        </div>
+
+      </div>
+
+      <!-- FOOTER -->
+      <div style="background:#f8fafc;border-top:1px solid #e2e8f0;padding:20px 30px;text-align:center;">
+
+        <div style="font-size:12px;color:#64748b;">
+          Change Order #${esc(changeNumber)}
+        </div>
+
+        <div style="margin-top:5px;font-size:11px;color:#94a3b8;">
+          Sent from ${esc(conn.email)} using ScopeGuard
+        </div>
+
       </div>
 
     </div>
-
-    <div style="margin-top:24px;padding:18px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px">
-
-      <b>Project:</b> ${esc(project.name)}
-
-      <br><br>
-
-      ${esc(description)}
-
-    </div>
-
-    <div style="text-align:right;font-size:26px;font-weight:800;margin-top:16px">
-      Change Order Total: ${usd(amount)}
-    </div>
-
-    <div style="margin-top:30px;text-align:center">
-
-      <a
-        href="${esc(approvalUrl)}"
-        style="
-          display:inline-block;
-          background:#b58a22;
-          color:#ffffff;
-          text-decoration:none;
-          font-size:17px;
-          font-weight:700;
-          padding:15px 32px;
-          border-radius:8px;
-        "
-      >
-        APPROVE CHANGE ORDER
-      </a>
-
-    </div>
-
-    <p style="margin-top:16px;text-align:center;color:#64748b;font-size:12px">
-      Review the change order above and select Approve Change Order to authorize the additional work.
-    </p>
-
-    <p style="margin-top:28px;color:#64748b;font-size:12px">
-      Sent from ${esc(conn.email)} using ScopeGuard.
-    </p>
 
   </div>
 
 </body>
 </html>`;
-
     const boundary = `sg_change_${Date.now()}`;
     const alt = `alt_${Date.now()}`;
 

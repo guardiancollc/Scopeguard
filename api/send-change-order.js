@@ -140,64 +140,68 @@ const html = `
       </div>
 
       <!-- DOCUMENT TITLE -->
-      <div style="padding:30px 30px 18px 30px;">
-        <div style="font-size:12px;font-weight:800;letter-spacing:2px;color:#b8860b;">
+<div style="padding:24px 30px 18px 30px;">
+
+  <div style="font-size:12px;font-weight:800;letter-spacing:2px;color:#b8860b;">
+    CHANGE ORDER
+  </div>
+
+  <div style="margin-top:7px;font-size:30px;font-weight:800;color:#111827;line-height:1.15;">
+    Change Order
+  </div>
+
+  <div style="margin-top:7px;font-size:16px;color:#64748b;">
+    ${esc(project.name || 'Project')}
+  </div>
+
+</div>
+
+<!-- INFO -->
+<div style="padding:0 30px 24px 30px;">
+
+  <table width="100%" cellpadding="0" cellspacing="0"
+    style="border-collapse:collapse;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;">
+
+    <tr>
+      <td style="padding:16px;border-bottom:1px solid #e2e8f0;">
+        <div style="font-size:11px;font-weight:800;color:#64748b;letter-spacing:1px;">
+          PREPARED FOR
+        </div>
+        <div style="margin-top:5px;font-size:16px;font-weight:700;color:#111827;">
+          ${esc(project.customer || 'Customer')}
+        </div>
+        <div style="margin-top:3px;font-size:13px;color:#64748b;">
+          ${esc(to)}
+        </div>
+      </td>
+    </tr>
+
+    <tr>
+      <td style="padding:16px;border-bottom:1px solid #e2e8f0;">
+        <div style="font-size:11px;font-weight:800;color:#64748b;letter-spacing:1px;">
+          PROJECT
+        </div>
+        <div style="margin-top:5px;font-size:16px;font-weight:700;color:#111827;">
+          ${esc(project.name || 'Project')}
+        </div>
+      </td>
+    </tr>
+
+    <tr>
+      <td style="padding:16px;">
+        <div style="font-size:11px;font-weight:800;color:#64748b;letter-spacing:1px;">
           CHANGE ORDER
         </div>
-
-        <div style="margin-top:8px;font-size:26px;font-weight:800;color:#111827;">
-          Change Order Review
+        <div style="margin-top:5px;font-size:14px;color:#111827;">
+          #${esc(changeNumber)}
         </div>
+      </td>
+    </tr>
 
-        <div style="margin-top:5px;font-size:14px;color:#64748b;">
-          Please review the additional work below.
-        </div>
-      </div>
+  </table>
 
-      <!-- INFO -->
-      <div style="padding:0 30px 24px 30px;">
-        <table width="100%" cellpadding="0" cellspacing="0"
-          style="border-collapse:collapse;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;">
-
-          <tr>
-            <td style="padding:16px;border-bottom:1px solid #e2e8f0;">
-              <div style="font-size:11px;font-weight:800;color:#64748b;letter-spacing:1px;">
-                PREPARED FOR
-              </div>
-              <div style="margin-top:5px;font-size:16px;font-weight:700;color:#111827;">
-                ${esc(project.customer || 'Customer')}
-              </div>
-              <div style="margin-top:3px;font-size:13px;color:#64748b;">
-                ${esc(to)}
-              </div>
-            </td>
-          </tr>
-
-          <tr>
-            <td style="padding:16px;border-bottom:1px solid #e2e8f0;">
-              <div style="font-size:11px;font-weight:800;color:#64748b;letter-spacing:1px;">
-                PROJECT
-              </div>
-              <div style="margin-top:5px;font-size:16px;font-weight:700;color:#111827;">
-                ${esc(project.name || 'Project')}
-              </div>
-            </td>
-          </tr>
-
-          <tr>
-            <td style="padding:16px;">
-              <div style="font-size:11px;font-weight:800;color:#64748b;letter-spacing:1px;">
-                CHANGE ORDER
-              </div>
-              <div style="margin-top:5px;font-size:14px;color:#111827;">
-                #${esc(changeNumber)}
-              </div>
-            </td>
-          </tr>
-
-        </table>
-      </div>
-
+</div>
+     
 <!-- DESCRIPTION -->
 <div style="padding:0 30px 14px 30px;">
 

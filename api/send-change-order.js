@@ -117,7 +117,7 @@ ${companyName}
 ${company?.phone || ''}
 ${conn.email}`;
 
-    const html = `
+const html = `
 <!doctype html>
 <html>
 <body style="margin:0;background:#f1f5f9;font-family:Arial,sans-serif;color:#111827">
@@ -143,8 +143,7 @@ ${conn.email}`;
       </div>
 
       <div style="text-align:right">
-        <b>CHANGE ORDER</b><br>
-        ${esc(changeNumber)}
+        <b>CHANGE ORDER ${esc(changeNumber)}</b>
       </div>
 
     </div>
@@ -153,21 +152,17 @@ ${conn.email}`;
 
       <b>Project:</b> ${esc(project.name)}
 
-      <div style="margin-top:18px">
-        <b>Description of Change</b>
-      </div>
+      <br><br>
 
-      <div style="margin-top:8px;white-space:pre-wrap">
-        ${esc(description)}
-      </div>
+      ${esc(description)}
 
     </div>
 
-    <div style="text-align:right;font-size:26px;font-weight:800;margin-top:22px">
+    <div style="text-align:right;font-size:26px;font-weight:800;margin-top:16px">
       Change Order Total: ${usd(amount)}
     </div>
 
-    <div style="margin-top:32px;text-align:center">
+    <div style="margin-top:30px;text-align:center">
 
       <a
         href="${esc(approvalUrl)}"
@@ -176,10 +171,10 @@ ${conn.email}`;
           background:#b58a22;
           color:#ffffff;
           text-decoration:none;
-          font-size:18px;
+          font-size:17px;
           font-weight:700;
-          padding:16px 34px;
-          border-radius:9px;
+          padding:15px 32px;
+          border-radius:8px;
         "
       >
         APPROVE CHANGE ORDER
@@ -187,8 +182,8 @@ ${conn.email}`;
 
     </div>
 
-    <p style="margin-top:22px;text-align:center;color:#64748b;font-size:13px">
-      Clicking the button above confirms approval of this change order.
+    <p style="margin-top:16px;text-align:center;color:#64748b;font-size:12px">
+      Review the change order above and select Approve Change Order to authorize the additional work.
     </p>
 
     <p style="margin-top:28px;color:#64748b;font-size:12px">

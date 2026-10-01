@@ -198,26 +198,26 @@ const html = `
         </table>
       </div>
 
-      <!-- DESCRIPTION -->
-      <div style="padding:0 30px 24px 30px;">
+<!-- DESCRIPTION -->
+<div style="padding:0 30px 14px 30px;">
 
-        <div style="font-size:12px;font-weight:800;letter-spacing:1.4px;color:#64748b;margin-bottom:10px;">
-          DESCRIPTION OF CHANGE
-        </div>
+  <div style="font-size:12px;font-weight:800;letter-spacing:1.4px;color:#64748b;margin-bottom:8px;">
+    DESCRIPTION OF CHANGE
+  </div>
 
-        <div style="background:#ffffff;border:1px solid #e2e8f0;border-radius:12px;padding:18px;font-size:15px;line-height:1.7;color:#1f2937;">
-          ${esc(changeOrder.description || 'Additional work')}
-        </div>
+  <div style="background:#ffffff;border:1px solid #e2e8f0;border-radius:12px;padding:16px 18px;font-size:15px;line-height:1.6;color:#1f2937;text-align:left;white-space:pre-line;">
+${esc(changeOrder.description || 'Additional work')}
+  </div>
 
-        <div style="margin-top:18px;font-size:12px;font-weight:800;letter-spacing:1.4px;color:#64748b;">
-          REQUESTED BY
-        </div>
+  <div style="margin-top:14px;font-size:12px;font-weight:800;letter-spacing:1.4px;color:#64748b;">
+    REQUESTED BY
+  </div>
 
-        <div style="margin-top:7px;font-size:15px;font-weight:600;color:#111827;">
-          ${esc(changeOrder.requestedBy || 'Not specified')}
-        </div>
+  <div style="margin-top:6px;font-size:15px;font-weight:600;color:#111827;">
+    ${esc(changeOrder.requestedBy || 'Not specified')}
+  </div>
 
-      </div>
+</div>
 
       <!-- TOTAL -->
       <div style="padding:0 30px 26px 30px;">

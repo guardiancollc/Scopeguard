@@ -229,7 +229,7 @@ const html = `
           </div>
 
           <div style="margin-top:5px;font-size:34px;font-weight:800;color:#ffffff;">
-            ${money(changeOrder.amount)}
+            ${Number(changeOrder.amount || 0).toLocaleString('en-US', {style:'currency', currency:'USD'})}
           </div>
 
         </div>

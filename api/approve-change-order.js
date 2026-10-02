@@ -335,11 +335,11 @@ module.exports = async (req, res) => {
         project?.customer || 'Customer';
 
       const description =
-        changeOrder.description ||
-        changeOrder.title ||
-        changeOrder.note ||
-        changeOrder.reason ||
-        'Additional work';
+  changeOrder.description ||
+  changeOrder.title ||
+  changeOrder.note ||
+  changeOrder.reason ||
+  'Additional work';
 
       const requestedBy =
         changeOrder.requested_by ||

@@ -111,7 +111,8 @@ module.exports = async (req, res) => {
     const companyName =
       company?.name || 'ScopeGuard';
 
-   let changeNumber =
+  let changeNumber =
+  changeOrder.change_order_number ||
   changeOrder.number ||
   changeOrder.changeOrderNumber;
 
@@ -138,26 +139,27 @@ if (!changeNumber) {
   }
 
   changeNumber = await numberResponse.json();
-  const saveNumberResponse = await fetch(
-  `${process.env.SUPABASE_URL}/rest/v1/extra_work?id=eq.${encodeURIComponent(changeOrder.id)}`,
-  {
-    method: 'PATCH',
-    headers: {
-      apikey: process.env.SUPABASE_SERVICE_ROLE_KEY,
-      Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
-      'Content-Type': 'application/json',
-      Prefer: 'return=minimal'
-    },
-    body: JSON.stringify({
-      change_order_number: changeNumber
-    })
-  }
-);
 
-if (!saveNumberResponse.ok) {
-  const details = await saveNumberResponse.text();
-  throw new Error(`Could not save change order number: ${details}`);
-}
+  const saveNumberResponse = await fetch(
+    `${process.env.SUPABASE_URL}/rest/v1/extra_work?id=eq.${encodeURIComponent(changeOrder.id)}`,
+    {
+      method: 'PATCH',
+      headers: {
+        apikey: process.env.SUPABASE_SERVICE_ROLE_KEY,
+        Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+        'Content-Type': 'application/json',
+        Prefer: 'return=minimal'
+      },
+      body: JSON.stringify({
+        change_order_number: changeNumber
+      })
+    }
+  );
+
+  if (!saveNumberResponse.ok) {
+    const details = await saveNumberResponse.text();
+    throw new Error(`Could not save change order number: ${details}`);
+  }
 }
     const description =
       changeOrder.description ||

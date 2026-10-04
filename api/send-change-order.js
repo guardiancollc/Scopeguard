@@ -158,7 +158,7 @@ if (!saveNumberResponse.ok) {
   const details = await saveNumberResponse.text();
   throw new Error(`Could not save change order number: ${details}`);
 }
-    
+}
     const description =
       changeOrder.description ||
       changeOrder.title ||

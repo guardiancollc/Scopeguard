@@ -281,32 +281,51 @@ ${esc(changeOrder.description || 'Additional work')}
   project,
   company
 });
+
     const boundary = `sg_change_${Date.now()}`;
-    const alt = `alt_${Date.now()}`;
+const alt = `alt_${Date.now()}`;
 
-    const mime = [
-      `From: ${companyName} <${conn.email}>`,
-      `To: ${to}`,
-      `Subject: ${subject}`,
-      'MIME-Version: 1.0',
+const pdfBase64 = pdfBuffer.toString('base64');
+const pdfFileName = `Change-Order-${changeNumber || 'ScopeGuard'}.pdf`;
 
-      `Content-Type: multipart/alternative; boundary="${alt}"`,
-      '',
+const mime = [
+  `From: ${companyName} <${conn.email}>`,
+  `To: ${to}`,
+  `Subject: ${subject}`,
+  'MIME-Version: 1.0',
+  `Content-Type: multipart/mixed; boundary="${boundary}"`,
+  '',
 
-      `--${alt}`,
-      'Content-Type: text/plain; charset="UTF-8"',
-      '',
-      text,
+  `--${boundary}`,
+  `Content-Type: multipart/alternative; boundary="${alt}"`,
+  '',
 
-      `--${alt}`,
-      'Content-Type: text/html; charset="UTF-8"',
-      '',
-      html,
+  `--${alt}`,
+  'Content-Type: text/plain; charset="UTF-8"',
+  'Content-Transfer-Encoding: 8bit',
+  '',
+  text,
 
-      `--${alt}--`
+  `--${alt}`,
+  'Content-Type: text/html; charset="UTF-8"',
+  'Content-Transfer-Encoding: 8bit',
+  '',
+  html,
 
-    ].join('\r\n');
+  `--${alt}--`,
+  '',
 
+  `--${boundary}`,
+  'Content-Type: application/pdf; name="' + pdfFileName + '"',
+  'Content-Transfer-Encoding: base64',
+  'Content-Disposition: attachment; filename="' + pdfFileName + '"',
+  '',
+  pdfBase64,
+
+  `--${boundary}--`,
+  ''
+].join('\r\n');
+    
     const gr = await fetch(
       'https://gmail.googleapis.com/gmail/v1/users/me/messages/send',
       {

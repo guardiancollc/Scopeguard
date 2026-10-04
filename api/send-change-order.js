@@ -111,12 +111,10 @@ module.exports = async (req, res) => {
     const companyName =
       company?.name || 'ScopeGuard';
 
-    const changeNumber =
+   const changeNumber =
   changeOrder.number ||
-  changeOrder.changeOrderNumber ||
-  changeOrder.id ||
-  'Change Order';
-
+  changeOrder.changeOrderNumber;
+    
     const description =
       changeOrder.description ||
       changeOrder.title ||

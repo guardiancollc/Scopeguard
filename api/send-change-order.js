@@ -5,6 +5,8 @@ const {
   refreshAccess
 } = require('../lib/google-email');
 
+const changeOrderPdf = require('../lib/change-order-pdf');
+
 const esc = (s = '') =>
   String(s).replace(/[&<>"']/g, c => ({
     '&': '&amp;',

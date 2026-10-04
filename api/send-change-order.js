@@ -111,9 +111,34 @@ module.exports = async (req, res) => {
     const companyName =
       company?.name || 'ScopeGuard';
 
-   const changeNumber =
+   let changeNumber =
   changeOrder.number ||
   changeOrder.changeOrderNumber;
+
+if (!changeNumber) {
+  const numberResponse = await fetch(
+    `${process.env.SUPABASE_URL}/rest/v1/rpc/next_document_number`,
+    {
+      method: 'POST',
+      headers: {
+        apikey: process.env.SUPABASE_SERVICE_ROLE_KEY,
+        Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        p_company_id: company.id,
+        p_document_type: 'change_order'
+      })
+    }
+  );
+
+  if (!numberResponse.ok) {
+    const details = await numberResponse.text();
+    throw new Error(`Could not generate change order number: ${details}`);
+  }
+
+  changeNumber = await numberResponse.json();
+}
     
     const description =
       changeOrder.description ||

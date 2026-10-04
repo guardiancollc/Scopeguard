@@ -1,3 +1,40 @@
+const SUPABASE_URL =
+  process.env.SUPABASE_URL ||
+  process.env.NEXT_PUBLIC_SUPABASE_URL;
+
+const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+const supabaseHeaders = {
+  apikey: SERVICE_ROLE_KEY || '',
+  Authorization: `Bearer ${SERVICE_ROLE_KEY || ''}`,
+  'Content-Type': 'application/json'
+};
+
+async function getNextDocumentNumber(companyId, documentType) {
+  if (!companyId) {
+    throw new Error('Company ID is required to generate a document number.');
+  }
+
+  const response = await fetch(
+    `${SUPABASE_URL}/rest/v1/rpc/next_document_number`,
+    {
+      method: 'POST',
+      headers: supabaseHeaders,
+      body: JSON.stringify({
+        p_company_id: companyId,
+        p_document_type: documentType
+      })
+    }
+  );
+
+  if (!response.ok) {
+    const details = await response.text();
+    console.error('Document number generation failed:', details);
+    throw new Error('Could not generate document number.');
+  }
+
+  return await response.json();
+}
 const {
   userFromBearer,
   getConnection,

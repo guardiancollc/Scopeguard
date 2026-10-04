@@ -275,6 +275,12 @@ ${esc(changeOrder.description || 'Additional work')}
 
 </body>
 </html>`;
+   
+    const pdfBuffer = await changeOrderPdf({
+  changeOrder,
+  project,
+  company
+});
     const boundary = `sg_change_${Date.now()}`;
     const alt = `alt_${Date.now()}`;
 

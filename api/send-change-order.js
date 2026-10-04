@@ -10,31 +10,6 @@ const supabaseHeaders = {
   'Content-Type': 'application/json'
 };
 
-async function getNextDocumentNumber(companyId, documentType) {
-  if (!companyId) {
-    throw new Error('Company ID is required to generate a document number.');
-  }
-
-  const response = await fetch(
-    `${SUPABASE_URL}/rest/v1/rpc/next_document_number`,
-    {
-      method: 'POST',
-      headers: supabaseHeaders,
-      body: JSON.stringify({
-        p_company_id: companyId,
-        p_document_type: documentType
-      })
-    }
-  );
-
-  if (!response.ok) {
-    const details = await response.text();
-    console.error('Document number generation failed:', details);
-    throw new Error('Could not generate document number.');
-  }
-
-  return await response.json();
-}
 const {
   userFromBearer,
   getConnection,
@@ -60,6 +35,59 @@ const usd = n =>
   }).format(Number(n || 0));
 
 const enc = s => Buffer.from(s).toString('base64url');
+
+async function getChangeOrderCompanyId(changeOrder) {
+  if (changeOrder?.company_id || changeOrder?.companyId) {
+    return changeOrder.company_id || changeOrder.companyId;
+  }
+
+  if (!changeOrder?.id) {
+    throw new Error('Change order ID is required to determine the company.');
+  }
+
+  const response = await fetch(
+    `${SUPABASE_URL}/rest/v1/extra_work?id=eq.${encodeURIComponent(changeOrder.id)}&select=company_id&limit=1`,
+    {
+      headers: supabaseHeaders
+    }
+  );
+
+  if (!response.ok) {
+    const details = await response.text();
+    throw new Error(`Could not load change order company: ${details}`);
+  }
+
+  const rows = await response.json();
+  const companyId = rows?.[0]?.company_id;
+
+  if (!companyId) {
+    throw new Error('Could not determine the company for this change order.');
+  }
+
+  return companyId;
+}
+
+async function getNextDocumentNumber(companyId, documentType) {
+  const response = await fetch(
+    `${SUPABASE_URL}/rest/v1/rpc/next_document_number`,
+    {
+      method: 'POST',
+      headers: supabaseHeaders,
+      body: JSON.stringify({
+        p_company_id: companyId,
+        p_document_type: documentType
+      })
+    }
+  );
+
+  if (!response.ok) {
+    const details = await response.text();
+    console.error('Document number generation failed:', details);
+    throw new Error(`Could not generate change order number: ${details}`);
+  }
+
+  return await response.json();
+}
 
 module.exports = async (req, res) => {
   try {
@@ -95,6 +123,10 @@ module.exports = async (req, res) => {
       });
     }
 
+    if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
+      throw new Error('Supabase server configuration is incomplete.');
+    }
+
     const conn = await getConnection(user.id);
 
     if (!conn) {
@@ -108,59 +140,44 @@ module.exports = async (req, res) => {
       decrypt(conn.refresh_token_encrypted)
     );
 
-    const companyName =
-      company?.name || 'ScopeGuard';
+    const companyName = company?.name || 'ScopeGuard';
 
-  let changeNumber =
-  changeOrder.change_order_number ||
-  changeOrder.number ||
-  changeOrder.changeOrderNumber;
+    let changeNumber =
+      changeOrder.change_order_number ||
+      changeOrder.number ||
+      changeOrder.changeOrderNumber;
 
-if (!changeNumber) {
-  const numberResponse = await fetch(
-    `${process.env.SUPABASE_URL}/rest/v1/rpc/next_document_number`,
-    {
-      method: 'POST',
-      headers: {
-        apikey: process.env.SUPABASE_SERVICE_ROLE_KEY,
-        Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        p_company_id: company.id,
-        p_document_type: 'change_order'
-      })
+    if (!changeNumber) {
+      // The browser payload historically did not include company.id.
+      // Resolve it from the persisted extra_work row so numbering works
+      // reliably without depending on client-side state.
+      const companyId = await getChangeOrderCompanyId(changeOrder);
+
+      changeNumber = await getNextDocumentNumber(
+        companyId,
+        'change_order'
+      );
+
+      const saveNumberResponse = await fetch(
+        `${SUPABASE_URL}/rest/v1/extra_work?id=eq.${encodeURIComponent(changeOrder.id)}`,
+        {
+          method: 'PATCH',
+          headers: {
+            ...supabaseHeaders,
+            Prefer: 'return=minimal'
+          },
+          body: JSON.stringify({
+            change_order_number: changeNumber
+          })
+        }
+      );
+
+      if (!saveNumberResponse.ok) {
+        const details = await saveNumberResponse.text();
+        throw new Error(`Could not save change order number: ${details}`);
+      }
     }
-  );
 
-  if (!numberResponse.ok) {
-    const details = await numberResponse.text();
-    throw new Error(`Could not generate change order number: ${details}`);
-  }
-
-  changeNumber = await numberResponse.json();
-
-  const saveNumberResponse = await fetch(
-    `${process.env.SUPABASE_URL}/rest/v1/extra_work?id=eq.${encodeURIComponent(changeOrder.id)}`,
-    {
-      method: 'PATCH',
-      headers: {
-        apikey: process.env.SUPABASE_SERVICE_ROLE_KEY,
-        Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
-        'Content-Type': 'application/json',
-        Prefer: 'return=minimal'
-      },
-      body: JSON.stringify({
-        change_order_number: changeNumber
-      })
-    }
-  );
-
-  if (!saveNumberResponse.ok) {
-    const details = await saveNumberResponse.text();
-    throw new Error(`Could not save change order number: ${details}`);
-  }
-}
     const description =
       changeOrder.description ||
       changeOrder.title ||
@@ -200,21 +217,14 @@ ${companyName}
 ${company?.phone || ''}
 ${conn.email}`;
 
-const html = `
+    const html = `
 <!doctype html>
 <html>
 <body style="margin:0;padding:0;background:#f4f6f8;font-family:Arial,Helvetica,sans-serif;color:#111827;">
-
   <div style="max-width:680px;margin:0 auto;padding:24px 12px;">
-
     <div style="background:#ffffff;border:1px solid #e5e7eb;border-radius:16px;overflow:hidden;">
-
-      <!-- HEADER -->
       <div style="background:#0b111b;padding:26px 30px;border-bottom:4px solid #c99720;">
-        <div style="font-size:24px;font-weight:800;color:#ffffff;letter-spacing:.3px;">
-          ${esc(companyName)}
-        </div>
-
+        <div style="font-size:24px;font-weight:800;color:#ffffff;letter-spacing:.3px;">${esc(companyName)}</div>
         <div style="margin-top:7px;font-size:13px;color:#cbd5e1;line-height:1.6;">
           ${company?.address ? esc(company.address) + '<br>' : ''}
           ${company?.phone ? esc(company.phone) + ' &nbsp; • &nbsp; ' : ''}
@@ -222,191 +232,111 @@ const html = `
         </div>
       </div>
 
-      <!-- DOCUMENT TITLE -->
-<div style="padding:24px 30px 18px 30px;">
+      <div style="padding:24px 30px 18px 30px;">
+        <div style="font-size:12px;font-weight:800;letter-spacing:2px;color:#b8860b;">CHANGE ORDER</div>
+        <div style="margin-top:7px;font-size:30px;font-weight:800;color:#111827;line-height:1.15;">Change Order</div>
+        <div style="margin-top:7px;font-size:16px;color:#64748b;">${esc(project.name || 'Project')}</div>
+      </div>
 
-  <div style="font-size:12px;font-weight:800;letter-spacing:2px;color:#b8860b;">
-    CHANGE ORDER
-  </div>
+      <div style="padding:0 30px 24px 30px;">
+        <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;">
+          <tr>
+            <td style="padding:16px;border-bottom:1px solid #e2e8f0;">
+              <div style="font-size:11px;font-weight:800;color:#64748b;letter-spacing:1px;">PREPARED FOR</div>
+              <div style="margin-top:5px;font-size:16px;font-weight:700;color:#111827;">${esc(project.customer || 'Customer')}</div>
+              <div style="margin-top:3px;font-size:13px;color:#64748b;">${esc(to)}</div>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:16px;border-bottom:1px solid #e2e8f0;">
+              <div style="font-size:11px;font-weight:800;color:#64748b;letter-spacing:1px;">PROJECT</div>
+              <div style="margin-top:5px;font-size:16px;font-weight:700;color:#111827;">${esc(project.name || 'Project')}</div>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:16px;">
+              <div style="font-size:11px;font-weight:800;color:#64748b;letter-spacing:1px;">CHANGE ORDER</div>
+              <div style="margin-top:5px;font-size:14px;color:#111827;">#${esc(changeNumber)}</div>
+            </td>
+          </tr>
+        </table>
+      </div>
 
-  <div style="margin-top:7px;font-size:30px;font-weight:800;color:#111827;line-height:1.15;">
-    Change Order
-  </div>
+      <div style="padding:0 30px 14px 30px;">
+        <div style="font-size:12px;font-weight:800;letter-spacing:1.4px;color:#64748b;margin-bottom:8px;">DESCRIPTION OF CHANGE</div>
+        <div style="background:#ffffff;border:1px solid #e2e8f0;border-radius:12px;padding:16px 18px;font-size:15px;line-height:1.6;color:#1f2937;text-align:left;white-space:pre-line;">${esc(description)}</div>
+        <div style="margin-top:14px;font-size:12px;font-weight:800;letter-spacing:1.4px;color:#64748b;">REQUESTED BY</div>
+        <div style="margin-top:6px;font-size:15px;font-weight:600;color:#111827;">${esc(changeOrder.requestedBy || 'Not specified')}</div>
+      </div>
 
-  <div style="margin-top:7px;font-size:16px;color:#64748b;">
-    ${esc(project.name || 'Project')}
-  </div>
-
-</div>
-
-<!-- INFO -->
-<div style="padding:0 30px 24px 30px;">
-
-  <table width="100%" cellpadding="0" cellspacing="0"
-    style="border-collapse:collapse;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;">
-
-    <tr>
-      <td style="padding:16px;border-bottom:1px solid #e2e8f0;">
-        <div style="font-size:11px;font-weight:800;color:#64748b;letter-spacing:1px;">
-          PREPARED FOR
-        </div>
-        <div style="margin-top:5px;font-size:16px;font-weight:700;color:#111827;">
-          ${esc(project.customer || 'Customer')}
-        </div>
-        <div style="margin-top:3px;font-size:13px;color:#64748b;">
-          ${esc(to)}
-        </div>
-      </td>
-    </tr>
-
-    <tr>
-      <td style="padding:16px;border-bottom:1px solid #e2e8f0;">
-        <div style="font-size:11px;font-weight:800;color:#64748b;letter-spacing:1px;">
-          PROJECT
-        </div>
-        <div style="margin-top:5px;font-size:16px;font-weight:700;color:#111827;">
-          ${esc(project.name || 'Project')}
-        </div>
-      </td>
-    </tr>
-
-    <tr>
-      <td style="padding:16px;">
-        <div style="font-size:11px;font-weight:800;color:#64748b;letter-spacing:1px;">
-          CHANGE ORDER
-        </div>
-        <div style="margin-top:5px;font-size:14px;color:#111827;">
-          #${esc(changeNumber)}
-        </div>
-      </td>
-    </tr>
-
-  </table>
-
-</div>
-     
-<!-- DESCRIPTION -->
-<div style="padding:0 30px 14px 30px;">
-
-  <div style="font-size:12px;font-weight:800;letter-spacing:1.4px;color:#64748b;margin-bottom:8px;">
-    DESCRIPTION OF CHANGE
-  </div>
-
-  <div style="background:#ffffff;border:1px solid #e2e8f0;border-radius:12px;padding:16px 18px;font-size:15px;line-height:1.6;color:#1f2937;text-align:left;white-space:pre-line;">
-${esc(changeOrder.description || 'Additional work')}
-  </div>
-
-  <div style="margin-top:14px;font-size:12px;font-weight:800;letter-spacing:1.4px;color:#64748b;">
-    REQUESTED BY
-  </div>
-
-  <div style="margin-top:6px;font-size:15px;font-weight:600;color:#111827;">
-    ${esc(changeOrder.requestedBy || 'Not specified')}
-  </div>
-
-</div>
-
-      <!-- TOTAL -->
       <div style="padding:0 30px 26px 30px;">
-
         <div style="background:#0b111b;border-radius:14px;padding:22px;text-align:right;">
-
-          <div style="font-size:12px;font-weight:800;letter-spacing:1.4px;color:#94a3b8;">
-            CHANGE ORDER TOTAL
-          </div>
-
-          <div style="margin-top:5px;font-size:34px;font-weight:800;color:#ffffff;">
-            ${Number(changeOrder.amount || 0).toLocaleString('en-US', {style:'currency', currency:'USD'})}
-          </div>
-
+          <div style="font-size:12px;font-weight:800;letter-spacing:1.4px;color:#94a3b8;">CHANGE ORDER TOTAL</div>
+          <div style="margin-top:5px;font-size:34px;font-weight:800;color:#ffffff;">${usd(amount)}</div>
         </div>
-
       </div>
 
-      <!-- APPROVAL -->
       <div style="padding:0 30px 32px 30px;text-align:center;">
-
-        <a href="${approvalUrl}"
-          style="display:block;background:#c99720;color:#ffffff;text-decoration:none;font-size:16px;font-weight:800;letter-spacing:.5px;padding:18px 20px;border-radius:10px;">
-          APPROVE CHANGE ORDER
-        </a>
-
-        <div style="margin-top:14px;font-size:12px;line-height:1.6;color:#64748b;">
-          Selecting Approve Change Order confirms authorization for the additional work and change order amount shown above.
-        </div>
-
+        <a href="${esc(approvalUrl)}" style="display:block;background:#c99720;color:#ffffff;text-decoration:none;font-size:16px;font-weight:800;letter-spacing:.5px;padding:18px 20px;border-radius:10px;">APPROVE CHANGE ORDER</a>
+        <div style="margin-top:14px;font-size:12px;line-height:1.6;color:#64748b;">Selecting Approve Change Order confirms authorization for the additional work and change order amount shown above.</div>
       </div>
 
-      <!-- FOOTER -->
       <div style="background:#f8fafc;border-top:1px solid #e2e8f0;padding:20px 30px;text-align:center;">
-
-        <div style="font-size:12px;color:#64748b;">
-          Change Order #${esc(changeNumber)}
-        </div>
-
-        <div style="margin-top:5px;font-size:11px;color:#94a3b8;">
-          Sent from ${esc(conn.email)} using ScopeGuard
-        </div>
-
+        <div style="font-size:12px;color:#64748b;">Change Order #${esc(changeNumber)}</div>
+        <div style="margin-top:5px;font-size:11px;color:#94a3b8;">Sent from ${esc(conn.email)} using ScopeGuard</div>
       </div>
-
     </div>
-
   </div>
-
 </body>
 </html>`;
-   
+
     const pdfBuffer = await changeOrderPdf({
-  changeOrder,
-  project,
-  company
-});
+      changeOrder: {
+        ...changeOrder,
+        change_order_number: changeNumber,
+        number: changeNumber
+      },
+      project,
+      company
+    });
 
     const boundary = `sg_change_${Date.now()}`;
-const alt = `alt_${Date.now()}`;
+    const alt = `alt_${Date.now()}`;
+    const pdfBase64 = pdfBuffer.toString('base64');
+    const pdfFileName = `Change-Order-${changeNumber || 'ScopeGuard'}.pdf`;
 
-const pdfBase64 = pdfBuffer.toString('base64');
-const pdfFileName = `Change-Order-${changeNumber || 'ScopeGuard'}.pdf`;
+    const mime = [
+      `From: ${companyName} <${conn.email}>`,
+      `To: ${to}`,
+      `Subject: ${subject}`,
+      'MIME-Version: 1.0',
+      `Content-Type: multipart/mixed; boundary="${boundary}"`,
+      '',
+      `--${boundary}`,
+      `Content-Type: multipart/alternative; boundary="${alt}"`,
+      '',
+      `--${alt}`,
+      'Content-Type: text/plain; charset="UTF-8"',
+      'Content-Transfer-Encoding: 8bit',
+      '',
+      text,
+      `--${alt}`,
+      'Content-Type: text/html; charset="UTF-8"',
+      'Content-Transfer-Encoding: 8bit',
+      '',
+      html,
+      `--${alt}--`,
+      '',
+      `--${boundary}`,
+      'Content-Type: application/pdf; name="' + pdfFileName + '"',
+      'Content-Transfer-Encoding: base64',
+      'Content-Disposition: attachment; filename="' + pdfFileName + '"',
+      '',
+      pdfBase64,
+      `--${boundary}--`,
+      ''
+    ].join('\r\n');
 
-const mime = [
-  `From: ${companyName} <${conn.email}>`,
-  `To: ${to}`,
-  `Subject: ${subject}`,
-  'MIME-Version: 1.0',
-  `Content-Type: multipart/mixed; boundary="${boundary}"`,
-  '',
-
-  `--${boundary}`,
-  `Content-Type: multipart/alternative; boundary="${alt}"`,
-  '',
-
-  `--${alt}`,
-  'Content-Type: text/plain; charset="UTF-8"',
-  'Content-Transfer-Encoding: 8bit',
-  '',
-  text,
-
-  `--${alt}`,
-  'Content-Type: text/html; charset="UTF-8"',
-  'Content-Transfer-Encoding: 8bit',
-  '',
-  html,
-
-  `--${alt}--`,
-  '',
-
-  `--${boundary}`,
-  'Content-Type: application/pdf; name="' + pdfFileName + '"',
-  'Content-Transfer-Encoding: base64',
-  'Content-Disposition: attachment; filename="' + pdfFileName + '"',
-  '',
-  pdfBase64,
-
-  `--${boundary}--`,
-  ''
-].join('\r\n');
-    
     const gr = await fetch(
       'https://gmail.googleapis.com/gmail/v1/users/me/messages/send',
       {
@@ -415,9 +345,7 @@ const mime = [
           Authorization: `Bearer ${access}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          raw: enc(mime)
-        })
+        body: JSON.stringify({ raw: enc(mime) })
       }
     );
 
@@ -433,13 +361,11 @@ const mime = [
     return res.json({
       ok: true,
       messageId: gj.id,
-      from: conn.email
+      from: conn.email,
+      changeOrderNumber: changeNumber
     });
-
   } catch (e) {
-
     console.error(e);
-
     return res.status(e.status || 500).json({
       error: e.message || 'Change order could not be sent.'
     });

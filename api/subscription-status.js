@@ -4,6 +4,7 @@ const { userFromBearer } = require('../lib/google-email');
 const { getOrCreateSubscription } = require('../lib/subscription-store');
 const { accessSnapshot } = require('../lib/entitlements');
 const { getPlan } = require('../lib/plans');
+const { requireMembership } = require('../lib/company-membership');
 
 function requestedCompanyId(req) {
   return String(req.query?.companyId || req.headers['x-scopeguard-company-id'] || '').trim();
@@ -13,20 +14,17 @@ module.exports = async (req, res) => {
   try {
     if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
-    // Authentication is mandatory. Authorization of company membership will be
-    // added when the worker/company-membership system is introduced. Until then,
-    // this endpoint remains disconnected from the live UI and must not be merged
-    // into production as an enforcement boundary.
-    await userFromBearer(req);
-
+    const user = await userFromBearer(req);
     const companyId = requestedCompanyId(req);
     if (!companyId) return res.status(400).json({ error: 'Company ID is required.' });
 
+    const membership = await requireMembership(user.id, companyId);
     const subscription = await getOrCreateSubscription(companyId);
     const access = accessSnapshot(subscription);
     const plan = access.planId ? getPlan(access.planId) : null;
 
     return res.json({
+      membership: { role: membership.role, companyId: membership.company_id },
       subscription: {
         planId: subscription.plan_id,
         status: subscription.status,

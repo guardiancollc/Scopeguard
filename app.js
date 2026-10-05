@@ -2416,6 +2416,14 @@ $('menuCompanyBtn')?.addEventListener('click',()=>{
   openCompanyProfile();
 });
 
+$('menuPlansBtn')?.addEventListener('click',()=>{
+  closeMenu();
+  if(!cloudEnabled || !session?.access_token){
+    return alert('Sign in to your ScopeGuard cloud account to view plans and billing.');
+  }
+  window.location.href='/plans.html';
+});
+
 $('backFromClients')?.addEventListener('click',()=>show('home'));
 $('backToClients')?.addEventListener('click',()=>show('clients'));
 $('backFromClientForm')?.addEventListener('click',()=>show('clients'));

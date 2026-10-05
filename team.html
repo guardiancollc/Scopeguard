@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#0b1220" />
+  <title>Team | ScopeGuard</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="header-brand"><div class="brand">ScopeGuard</div><div class="tagline">Team &amp; Workers</div></div>
+      <div class="top-actions"><img class="top-logo" src="scopeguard-logo.png" alt="ScopeGuard shield" /></div>
+    </header>
+    <main>
+      <section class="screen">
+        <button id="backBtn" class="ghost">← Home</button>
+        <div class="section-head">
+          <div><span class="eyebrow">TEAM &amp; WORKERS</span><h2>Manage your crew</h2><p class="muted">Invite workers and control who can access your company.</p></div>
+          <span id="teamPlanBadge" class="pill">Checking plan…</span>
+        </div>
+        <div id="teamMessage" class="card hidden"></div>
+        <div id="inviteCard" class="card form-card">
+          <div class="card-title-row"><div><h3>Invite a worker</h3><p class="muted">Invitations expire after 7 days.</p></div></div>
+          <div class="two-col">
+            <label>Email<input id="inviteEmail" type="email" autocomplete="email" placeholder="worker@company.com" /></label>
+            <label>Role<select id="inviteRole"><option value="worker">Worker</option><option value="foreman">Foreman</option><option value="admin">Admin</option></select></label>
+          </div>
+          <button id="inviteBtn" class="primary">Send invitation</button>
+        </div>
+        <div class="card">
+          <div class="card-title-row"><h3>Active team</h3><span id="teamCount" class="pill">0</span></div>
+          <div id="teamList"><p class="muted">Loading team…</p></div>
+        </div>
+        <div class="card">
+          <div class="card-title-row"><h3>Pending invitations</h3><span id="inviteCount" class="pill">0</span></div>
+          <div id="pendingList"><p class="muted">Loading invitations…</p></div>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.4/dist/umd/supabase.min.js"></script>
+  <script src="team-ui.js"></script>
+</body>
+</html>

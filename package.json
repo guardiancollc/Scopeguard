@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "vercel dev",
-    "check": "node --check app.js && node --check api/analyze.js && node --check api/health.js && node --check api/send-invoice.js && node --check api/email-connect.js && node --check api/email-callback.js && node --check api/email-status.js && node --check api/email-disconnect.js && node --check lib/google-email.js && node --check lib/invoice-pdf.js && node --check lib/plans.js && node --check lib/entitlements.js && node test/entitlements.test.js"
+    "check": "node --check app.js && node --check api/analyze.js && node --check api/health.js && node --check api/send-invoice.js && node --check api/email-connect.js && node --check api/email-callback.js && node --check api/email-status.js && node --check api/email-disconnect.js && node --check lib/google-email.js && node --check lib/invoice-pdf.js && node --check lib/plans.js && node --check lib/entitlements.js && node --check lib/subscription-store.js && node --check api/subscription-status.js && node test/entitlements.test.js"
   },
   "dependencies": {
     "pdfkit": "^0.17.2"

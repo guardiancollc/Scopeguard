@@ -4,7 +4,7 @@ const { userFromBearer } = require('../lib/google-email');
 const { requireMembership, canManageTeam } = require('../lib/company-membership');
 const { getOrCreateSubscription } = require('../lib/subscription-store');
 const { canUseTeam } = require('../lib/entitlements');
-const { listTeam,createInvitation,changeRole,disableWorker } = require('../lib/team-store');
+const { listTeam,listInvitations,createInvitation,revokeInvitation,changeRole,disableWorker } = require('../lib/team-store');
 
 const companyIdFrom=req=>String(req.query?.companyId||req.body?.companyId||req.headers['x-scopeguard-company-id']||'').trim();
 
@@ -19,15 +19,21 @@ module.exports=async(req,res)=>{
 
     if(req.method==='GET'){
       if(!canManageTeam(membership))return res.status(403).json({error:'Only an owner or admin can view the team.'});
-      return res.json({team:await listTeam(companyId)});
+      const [team,invitations]=await Promise.all([listTeam(companyId),listInvitations(companyId)]);
+      return res.json({team,invitations});
     }
     if(req.method!=='POST')return res.status(405).json({error:'Method not allowed'});
 
     const action=String(req.body?.action||'');
     if(action==='invite'){
       const result=await createInvitation({companyId,email:req.body?.email,role:req.body?.role||'worker',invitedBy:user.id});
-      // Token is returned only so the future mail layer can build the invite link.
+      // Raw token is returned once so the client can construct the invite URL; only its hash is stored.
       return res.json({ok:true,invitation:{id:result.invite.id,email:result.invite.email,role:result.invite.role,expiresAt:result.invite.expires_at},inviteToken:result.token});
+    }
+    if(action==='revoke-invite'){
+      const updated=await revokeInvitation({companyId,invitationId:req.body?.invitationId,actorUserId:user.id});
+      if(!updated)return res.status(404).json({error:'Pending invitation not found.'});
+      return res.json({ok:true,invitation:{id:updated.id,status:updated.status}});
     }
     if(action==='role'){
       const updated=await changeRole({companyId,targetUserId:req.body?.userId,role:req.body?.role,actorUserId:user.id});

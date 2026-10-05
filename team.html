@@ -7,6 +7,9 @@
   <title>Team & Workers | ScopeGuard</title>
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="stylesheet" href="styles.css" />
+  <style>
+    .team-hero{display:flex;justify-content:space-between;gap:18px;align-items:flex-start;margin:18px 0}.team-hero h2{margin:4px 0 6px}.team-plan{display:flex;align-items:center;gap:8px}.team-plan-card{border:1px solid rgba(37,99,235,.18);background:linear-gradient(135deg,rgba(37,99,235,.07),rgba(16,185,129,.05))}.team-plan-card .card-title-row{align-items:center}.role-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:14px 0 18px}.role-card{padding:16px;border:1px solid var(--line,#dbe3ee);border-radius:14px;background:var(--card,#fff)}.role-card h4{margin:0 0 5px}.role-card p{margin:0;font-size:13px}.role-dot{display:inline-grid;place-items:center;width:34px;height:34px;border-radius:50%;margin-bottom:10px;background:rgba(37,99,235,.1);font-weight:800}.team-section{margin-top:16px}.team-actions{display:flex;gap:10px;align-items:center}.team-actions .primary{white-space:nowrap}.team-divider{height:1px;background:var(--line,#e5e7eb);margin:18px 0}.invite-expiry{display:flex;gap:10px;align-items:flex-start;margin-top:14px;padding:12px;border-radius:12px;background:rgba(37,99,235,.06)}@media(max-width:720px){.team-hero{display:block}.team-plan{margin-top:12px}.role-grid{grid-template-columns:1fr}.team-actions{align-items:stretch;flex-direction:column}.team-actions .primary{width:100%}}
+  </style>
 </head>
 <body>
   <div class="app-shell">
@@ -17,12 +20,21 @@
     <main>
       <section class="screen">
         <button id="backBtn" class="ghost">← Home</button>
-        <div class="section-head">
-          <div><span class="eyebrow">TEAM &amp; WORKERS</span><h2>Manage your crew</h2><p class="muted">Invite workers, assign responsibilities and control company access.</p></div>
+        <div class="team-hero">
+          <div><span class="eyebrow">TEAM &amp; WORKERS</span><h2>Manage your crew</h2><p class="muted">Invite workers, assign responsibilities and control company access from one place.</p></div>
+          <div class="team-plan"><span class="pill">Business feature</span></div>
         </div>
         <div id="teamMessage" class="card hidden" role="status" aria-live="polite"></div>
+        <div class="card team-plan-card">
+          <div class="card-title-row"><div><h3>Team access</h3><p class="muted">Keep your company on the same page with role-based access.</p></div><span class="pill">Protected</span></div>
+        </div>
+        <div class="role-grid">
+          <div class="role-card"><span class="role-dot">W</span><h4>Worker</h4><p class="muted">Field access for assigned work and day-to-day tools.</p></div>
+          <div class="role-card"><span class="role-dot">F</span><h4>Foreman</h4><p class="muted">Worker permissions plus field leadership responsibilities.</p></div>
+          <div class="role-card"><span class="role-dot">A</span><h4>Admin</h4><p class="muted">Team management access without transferring company ownership.</p></div>
+        </div>
         <div id="inviteCard" class="card form-card">
-          <div class="card-title-row"><div><h3>Invite a worker</h3><p class="muted">Invite links expire after 7 days. Owners and admins can manage access.</p></div></div>
+          <div class="card-title-row"><div><h3>Invite a worker</h3><p class="muted">Add a team member and choose the right access level.</p></div></div>
           <div class="two-col">
             <label>Worker email<input id="inviteEmail" type="email" autocomplete="email" placeholder="worker@company.com" /></label>
             <label>Role<select id="inviteRole"><option value="worker">Worker</option><option value="foreman">Foreman</option><option value="admin">Admin</option></select></label>
@@ -30,13 +42,14 @@
           <div class="role-help muted"><strong>Worker:</strong> field access &nbsp;·&nbsp; <strong>Foreman:</strong> field leadership &nbsp;·&nbsp; <strong>Admin:</strong> team management</div>
           <button id="inviteBtn" class="primary">Send invitation</button>
         </div>
-        <div class="card">
-          <div class="card-title-row"><div><h3>Active team</h3><p class="muted">People who currently have company access.</p></div><span id="teamCount" class="pill">0</span></div>
+        <div class="card team-section">
+          <div class="card-title-row"><div><h3>Team members</h3><p class="muted">People who currently have access to your company.</p></div><div class="team-actions"><span id="teamCount" class="pill">0</span></div></div>
           <div id="teamList"><p class="muted">Loading team…</p></div>
         </div>
-        <div class="card">
+        <div class="card team-section">
           <div class="card-title-row"><div><h3>Pending invitations</h3><p class="muted">Invitations that have not been accepted yet.</p></div><span id="inviteCount" class="pill">0</span></div>
           <div id="pendingList"><p class="muted">Loading invitations…</p></div>
+          <div class="invite-expiry"><strong>7 days</strong><span class="muted">Invitations expire automatically. Owners and admins can revoke pending invitations at any time.</span></div>
         </div>
       </section>
     </main>

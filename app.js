@@ -1358,7 +1358,10 @@ $('createCompanyBtn').onclick=async()=>{
     if(cErr){setSync('Sync error','offline');return alert(cErr.message);}
     const {error:mErr}=await db.from('company_members').insert({company_id:id,user_id:session.user.id,role:'owner'});
     if(mErr){setSync('Sync error','offline');return alert(mErr.message);}
-    state.company={id,name,owner:session.user.email};state.projects=[];cache();await loadCloudState();show('home');return;
+    state.company={id,name,owner:session.user.email};state.projects=[];cache();await loadCloudState();
+    // New cloud companies must see plan/trial selection before entering the app.
+    window.location.href='/plans.html?onboarding=1';
+    return;
   }
   state.company={id:uid(),name,owner:$('ownerName').value.trim(),createdAt:new Date().toISOString()};cache();show('home');};
 

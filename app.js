@@ -1287,9 +1287,42 @@ window.markInvoicePaid=async(id)=>{
     if(state.company) show('home'); else show('onboarding');
   }
 }
-function routeAfterAuth(){
+async function routeAfterAuth(){
   updateUserBadge();
-  if(state.company) show('home'); else show('onboarding');
+  if(!state.company){
+    show('onboarding');
+    return;
+  }
+
+  // Cloud users must have an active entitlement before entering the app.
+  // New companies receive a 14-day trial from subscription-status; expired/inactive
+  // companies are routed to Plans & Billing.
+  if(cloudEnabled && session?.access_token){
+    try{
+      const r=await fetch(`/api/subscription-status?companyId=${encodeURIComponent(state.company.id)}`,{
+        headers:{
+          Authorization:`Bearer ${session.access_token}`,
+          'x-scopeguard-company-id':state.company.id
+        }
+      });
+      const body=await r.json().catch(()=>({}));
+      if(!r.ok) throw new Error(body.error||'Unable to verify ScopeGuard access.');
+
+      if(body.access?.hasAccess){
+        show('home');
+        return;
+      }
+
+      window.location.href='/plans.html?access=required';
+      return;
+    }catch(error){
+      console.error('Subscription access check failed:',error);
+      window.location.href='/plans.html?access=required';
+      return;
+    }
+  }
+
+  show('home');
 }
 function updateUserBadge(){
   $('userBadge').classList.toggle('hidden',!session);

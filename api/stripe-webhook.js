@@ -10,10 +10,15 @@ function webhookSecret() {
   return value;
 }
 
-function rawBody(req) {
+async function rawBody(req) {
   if (Buffer.isBuffer(req.body)) return req.body;
   if (typeof req.body === 'string') return Buffer.from(req.body);
   if (req.rawBody) return Buffer.isBuffer(req.rawBody) ? req.rawBody : Buffer.from(req.rawBody);
+
+  const chunks = [];
+  for await (const chunk of req) chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+  if (chunks.length) return Buffer.concat(chunks);
+
   throw Object.assign(new Error('Stripe webhook raw body is unavailable.'), { status: 400 });
 }
 
@@ -86,7 +91,7 @@ async function syncSubscription(subscription, deleted = false) {
 module.exports = async (req, res) => {
   try {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
-    const body = rawBody(req);
+    const body = await rawBody(req);
     if (!verifyStripeSignature(body, req.headers['stripe-signature'], webhookSecret())) {
       return res.status(400).json({ error: 'Invalid Stripe signature.' });
     }

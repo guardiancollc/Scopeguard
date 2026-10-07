@@ -1308,7 +1308,10 @@ async function routeAfterAuth(){
       const body=await r.json().catch(()=>({}));
       if(!r.ok) throw new Error(body.error||'Unable to verify ScopeGuard access.');
 
-      if(body.access?.hasAccess){
+      // subscription-status returns an access snapshot whose canonical
+      // access flag is `active`. Paid plans and an unexpired trial should
+      // enter ScopeGuard immediately instead of being sent back to Plans.
+      if(body.access?.active === true){
         show('home');
         return;
       }

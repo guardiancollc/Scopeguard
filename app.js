@@ -32,12 +32,17 @@ function applyScopeguardFeatureVisibility(){
   const ai = scopeguardFeatureAllowed('ai');
   const controls = [
     ['quickAiInvoiceBtn', ai],
-    ['quickChangeOrderBtn', changeOrders]
+    ['quickChangeOrderBtn', changeOrders],
+    ['newLogBtn', changeOrders],
+    ['quickLogNav', changeOrders]
   ];
   for(const [id, allowed] of controls){
     const element = document.getElementById(id);
     if(element) { element.hidden = !allowed; element.style.display = allowed ? '' : 'none'; }
   }
+  document.querySelectorAll('[data-project-tab="logs"]').forEach(el => { el.hidden = !changeOrders; el.style.display = changeOrders ? '' : 'none'; });
+  const logsSection = document.getElementById('projectLogsSection');
+  if(logsSection) { logsSection.hidden = !changeOrders; logsSection.style.display = changeOrders ? '' : 'none'; }
   document.querySelectorAll('[data-project-tab="changes"]').forEach(el => { el.hidden = !changeOrders; el.style.display = changeOrders ? '' : 'none'; });
   if(!changeOrders && document.querySelector('[data-project-tab="changes"].active')) document.querySelector('[data-project-tab="overview"]')?.click();
   const saveButton = document.getElementById('analyzeBtn');
@@ -49,7 +54,7 @@ function applyScopeguardFeatureVisibility(){
 }
 function show(id){
   if(cloudEnabled && !demoMode && scopeguardAccess){
-    if(id === 'extraDocument' && !scopeguardFeatureAllowed('changeOrders')){
+    if(['extraDocument','fieldLog'].includes(id) && !scopeguardFeatureAllowed('changeOrders')){
       alert('Change orders require the Business plan.');
       return;
     }
@@ -2252,8 +2257,8 @@ $('saveProjectBtn').onclick=async()=>{
   state.projects.push(p);state.activeProjectId=p.id;cache();show('projectDetail');
 };
 
-$('newLogBtn').onclick=()=>{pendingPhotos=[];$('photoPreview').innerHTML='';$('crewCount').value='';$('hoursEach').value='';$('workPerformed').value='';$('directedBy').value='';$('logNote').value='';$('laborRate').value=project()?.defaultLaborRate||42;$('directCost').value=0;$('productionQty').value='';$('productionUnit').value='';updateLaborQuickSummary();show('fieldLog');};
-$('quickLogNav').onclick=()=>{if(!state.activeProjectId){if(!state.projects.length)return alert('Create a project first.');state.activeProjectId=state.projects[0].id;}$('newLogBtn').click();};
+$('newLogBtn').onclick=()=>{if(!scopeguardFeatureAllowed('changeOrders')) return alert('Field Logs require the Business plan.');pendingPhotos=[];$('photoPreview').innerHTML='';$('crewCount').value='';$('hoursEach').value='';$('workPerformed').value='';$('directedBy').value='';$('logNote').value='';$('laborRate').value=project()?.defaultLaborRate||42;$('directCost').value=0;$('productionQty').value='';$('productionUnit').value='';updateLaborQuickSummary();show('fieldLog');};
+$('quickLogNav').onclick=()=>{if(!scopeguardFeatureAllowed('changeOrders')) return alert('Field Logs require the Business plan.');if(!state.activeProjectId){if(!state.projects.length)return alert('Create a project first.');state.activeProjectId=state.projects[0].id;}$('newLogBtn').click();};
 $('backToProject').onclick=()=>show('projectDetail');
 document.querySelectorAll('.back').forEach(b=>b.onclick=()=>show('dashboard'));
 document.querySelectorAll('[data-requester]').forEach(b=>b.addEventListener('click',()=>{$('directedBy').value=b.dataset.requester;document.querySelectorAll('[data-requester]').forEach(x=>x.classList.remove('selected'));b.classList.add('selected');}));
@@ -2284,7 +2289,7 @@ function analyzeLog(note,scope,directedBy){
   return {score,isPotential:score>=.28,reason:hits.length?`Signals found: ${hits.join(', ')}`:'Work description differs from the original scope or was specifically directed.',hits};
 }
 
-$('analyzeBtn').onclick=async()=>{
+$('analyzeBtn').onclick=async()=>{if(!scopeguardFeatureAllowed('changeOrders')) return alert('Field Logs require the Business plan.');
   const p=project();if(!p)return;
   const crew=Number($('crewCount').value||0),hoursEach=Number($('hoursEach').value||0),laborRate=Number($('laborRate').value||0),directCost=Number($('directCost').value||0),productionQty=Number($('productionQty').value||0);
   const laborHours=crew*hoursEach,laborCost=laborHours*laborRate;
@@ -2459,6 +2464,7 @@ document.querySelector('[data-project-tab="overview"]')?.addEventListener('click
 });
 
 document.querySelector('[data-project-tab="logs"]')?.addEventListener('click',()=>{
+  if(!scopeguardFeatureAllowed('changeOrders')) return alert('Field Logs require the Business plan.');
   document.querySelectorAll('[data-project-tab]').forEach(b=>b.classList.remove('active'));
   document.querySelector('[data-project-tab="logs"]').classList.add('active');
   document.getElementById('projectLogsSection')?.scrollIntoView({behavior:'smooth',block:'start'});

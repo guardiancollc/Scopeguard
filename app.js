@@ -32,18 +32,17 @@ function applyScopeguardFeatureVisibility(){
   const ai = scopeguardFeatureAllowed('ai');
   const controls = [
     ['quickAiInvoiceBtn', ai],
-    ['quickChangeOrderBtn', changeOrders],
-    ['newLogBtn', changeOrders]
+    ['quickChangeOrderBtn', changeOrders]
   ];
   for(const [id, allowed] of controls){
     const element = document.getElementById(id);
-    if(element) element.hidden = !allowed;
+    if(element) { element.hidden = !allowed; element.style.display = allowed ? '' : 'none'; }
   }
-  document.querySelectorAll('[data-project-tab="changes"]').forEach(el => { el.hidden = !changeOrders; });
+  document.querySelectorAll('[data-project-tab="changes"]').forEach(el => { el.hidden = !changeOrders; el.style.display = changeOrders ? '' : 'none'; });
   const changes = document.getElementById('projectChangesSection');
-  if(changes) changes.hidden = !changeOrders;
+  if(changes) { changes.hidden = !changeOrders; changes.style.display = changeOrders ? '' : 'none'; }
   const approved = document.getElementById('approvedExtraList')?.closest('.card');
-  if(approved) approved.hidden = !changeOrders;
+  if(approved) { approved.hidden = !changeOrders; approved.style.display = changeOrders ? '' : 'none'; }
 }
 function show(id){
   if(cloudEnabled && !demoMode && scopeguardAccess){
@@ -2305,6 +2304,7 @@ $('analyzeBtn').onclick=async()=>{
 };
 
 window.openExtra=(id)=>{
+  if(!scopeguardFeatureAllowed('changeOrders')) return alert('Change orders require the Business plan.');
   const p=project();const e=(p?.extras||[]).find(x=>x.id===id);if(!e)return;activeExtraId=id;
   const statusOptions=['potential','approved','rejected'].map(s=>`<option value="${s}" ${e.status===s?'selected':''}>${s[0].toUpperCase()+s.slice(1)}</option>`).join('');
   $('extraDocument').innerHTML=`<div class="extra-doc"><div class="doc-header"><div><span class="eyebrow">EXTRA WORK RECORD</span><h2>${escapeHtml(e.title)}</h2></div><span class="status-chip">${escapeHtml(e.status)}</span></div><div class="doc-grid"><div><b>Project</b><span>${escapeHtml(p.name)}</span></div><div><b>Customer / GC</b><span>${escapeHtml(p.customer||'')}</span></div><div><b>Date</b><span>${escapeHtml(e.date)}</span></div><div><b>Requested by</b><span>${escapeHtml(e.requestedBy||'Not recorded')}</span></div><div><b>Labor hours</b><span>${e.laborHours||0}</span></div><div><b>Estimated cost</b><span>${money(e.estimatedCost)}</span></div><div><b>Proposed value</b><span>${money(e.estimatedValue)}</span></div><div><b>Photos</b><span>${e.photoCount||e.photos?.length||0}</span></div></div><div class="doc-section"><b>Why ScopeGuard flagged it</b><p>${escapeHtml(e.reason)}</p></div><div class="doc-section"><b>Field record</b><p>${escapeHtml(e.note)}</p></div><div class="approval-panel"><label>Status<select id="extraStatusEdit">${statusOptions}</select></label><label>Change order value ($)<input id="extraValueEdit" type="number" min="0" step="0.01" value="${Number(e.estimatedValue||0)}"></label></div><div class="modal-actions"><button class="secondary" onclick="correctExtraLaborHours()">Correct Labor Hours</button><button class="secondary" onclick="saveExtraChanges()">Save Changes</button>${e.status!=='approved'?`<button class="primary" onclick="approveChangeOrder()">Move to Approved Change Orders</button>`:''}</div></div>`;
@@ -2369,6 +2369,7 @@ window.approveChangeOrder=async()=>{
 };
 
 window.saveExtraChanges=async()=>{
+  if(!scopeguardFeatureAllowed('changeOrders')) return alert('Change orders require the Business plan.');
   const p=project();const e=(p?.extras||[]).find(x=>x.id===activeExtraId);if(!e)return;
   const status=$('extraStatusEdit').value;
   const value=Number($('extraValueEdit').value||0);

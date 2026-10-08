@@ -23,7 +23,36 @@ function escapeHtml(s=''){ return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;',
 function setSync(text, cls='') { $('syncBadge').textContent=text; $('syncBadge').className=`sync-badge ${cls}`.trim(); }
 function safeName(name='photo.jpg'){ return name.toLowerCase().replace(/[^a-z0-9._-]+/g,'-').slice(-80) || 'photo.jpg'; }
 
+let scopeguardAccess = null;
+function scopeguardFeatureAllowed(feature){
+  return !cloudEnabled || demoMode || scopeguardAccess?.[feature] === true;
+}
+function applyScopeguardFeatureVisibility(){
+  const changeOrders = scopeguardFeatureAllowed('changeOrders');
+  const ai = scopeguardFeatureAllowed('ai');
+  const controls = [
+    ['quickAiInvoiceBtn', ai],
+    ['quickChangeOrderBtn', changeOrders],
+    ['newLogBtn', changeOrders]
+  ];
+  for(const [id, allowed] of controls){
+    const element = document.getElementById(id);
+    if(element) element.hidden = !allowed;
+  }
+  document.querySelectorAll('[data-project-tab="changes"]').forEach(el => { el.hidden = !changeOrders; });
+  const changes = document.getElementById('projectChangesSection');
+  if(changes) changes.hidden = !changeOrders;
+  const approved = document.getElementById('approvedExtraList')?.closest('.card');
+  if(approved) approved.hidden = !changeOrders;
+}
 function show(id){
+  if(cloudEnabled && !demoMode && scopeguardAccess){
+    if(id === 'extraDocument' && !scopeguardFeatureAllowed('changeOrders')){
+      alert('Change orders require the Business plan.');
+      return;
+    }
+  }
+  applyScopeguardFeatureVisibility();
   document.querySelectorAll('.screen').forEach(x=>x.classList.add('hidden'));
   $(id).classList.remove('hidden');
   $('bottomNav').classList.toggle('hidden', !state.company || ['home','invoiceCenter','projectCenter','clients','clientDetail','clientForm','companyProfile'].includes(id));
@@ -1312,6 +1341,8 @@ async function routeAfterAuth(){
       // access flag is `active`. Paid plans and an unexpired trial should
       // enter ScopeGuard immediately instead of being sent back to Plans.
       if(body.access?.active === true){
+        scopeguardAccess = body.access;
+        applyScopeguardFeatureVisibility();
         show('home');
         return;
       }
@@ -1408,6 +1439,7 @@ $('quickInvoiceBtn')?.addEventListener('click', () => {
 });
 
 $('quickAiInvoiceBtn')?.addEventListener('click', () => {
+  if(!scopeguardFeatureAllowed('ai')) return alert('AI tools require the Business plan.');
   alert('AI-assisted invoice creation is being added in Step 1.A.');
 });
 
@@ -1416,6 +1448,7 @@ $('quickClientsBtn')?.addEventListener('click', () => {
 });
 
 $('quickChangeOrderBtn')?.addEventListener('click', () => {
+  if(!scopeguardFeatureAllowed('changeOrders')) return alert('Change orders require the Business plan.');
   show('projectCenter');
 });
 

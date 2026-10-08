@@ -1,0 +1,13 @@
+'use strict';
+const assert=require('assert');
+const {PLAN_IDS}=require('../lib/plans');
+const {publicCatalog,providerPriceId,isPurchasable}=require('../lib/billing-catalog');
+const catalog=publicCatalog();
+assert.equal(catalog.length,5);
+assert.equal(isPurchasable(PLAN_IDS.TRIAL),false);
+assert.equal(isPurchasable(PLAN_IDS.PRO_MONTHLY),true);
+assert.equal(isPurchasable(PLAN_IDS.BUSINESS_LIFETIME),true);
+assert.equal(providerPriceId(PLAN_IDS.PRO_MONTHLY,{}),null);
+assert.equal(providerPriceId(PLAN_IDS.PRO_MONTHLY,{BILLING_PRICE_PRO_MONTHLY:'price_test'}),'price_test');
+assert.equal(catalog.some(p=>Object.keys(p).some(k=>/secret|key|providerPrice/i.test(k))),false);
+console.log('ScopeGuard billing catalog tests passed.');

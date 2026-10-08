@@ -23,7 +23,38 @@ function escapeHtml(s=''){ return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;',
 function setSync(text, cls='') { $('syncBadge').textContent=text; $('syncBadge').className=`sync-badge ${cls}`.trim(); }
 function safeName(name='photo.jpg'){ return name.toLowerCase().replace(/[^a-z0-9._-]+/g,'-').slice(-80) || 'photo.jpg'; }
 
+let scopeguardAccess = null;
+function scopeguardFeatureAllowed(feature){
+  return !cloudEnabled || demoMode || scopeguardAccess?.[feature] === true;
+}
+function applyScopeguardFeatureVisibility(){
+  const changeOrders = scopeguardFeatureAllowed('changeOrders');
+  const ai = scopeguardFeatureAllowed('ai');
+  const controls = [
+    ['quickAiInvoiceBtn', ai],
+    ['quickChangeOrderBtn', changeOrders]
+  ];
+  for(const [id, allowed] of controls){
+    const element = document.getElementById(id);
+    if(element) { element.hidden = !allowed; element.style.display = allowed ? '' : 'none'; }
+  }
+  document.querySelectorAll('[data-project-tab="changes"]').forEach(el => { el.hidden = !changeOrders; el.style.display = changeOrders ? '' : 'none'; });
+  if(!changeOrders && document.querySelector('[data-project-tab="changes"].active')) document.querySelector('[data-project-tab="overview"]')?.click();
+  const saveButton = document.getElementById('analyzeBtn');
+  if(saveButton) saveButton.textContent = changeOrders ? 'Save & analyze' : 'Save Field Log';
+  const changes = document.getElementById('projectChangesSection');
+  if(changes) { changes.hidden = !changeOrders; changes.style.display = changeOrders ? '' : 'none'; }
+  const approved = document.getElementById('approvedExtraList')?.closest('.card');
+  if(approved) { approved.hidden = !changeOrders; approved.style.display = changeOrders ? '' : 'none'; }
+}
 function show(id){
+  if(cloudEnabled && !demoMode && scopeguardAccess){
+    if(id === 'extraDocument' && !scopeguardFeatureAllowed('changeOrders')){
+      alert('Change orders require the Business plan.');
+      return;
+    }
+  }
+  applyScopeguardFeatureVisibility();
   document.querySelectorAll('.screen').forEach(x=>x.classList.add('hidden'));
   $(id).classList.remove('hidden');
   $('bottomNav').classList.toggle('hidden', !state.company || ['home','invoiceCenter','projectCenter','clients','clientDetail','clientForm','companyProfile'].includes(id));
@@ -33,7 +64,7 @@ function show(id){
   if(id==='clientDetail') renderClientDetail();
   if(id==='projectCenter') renderProjectCenter();
   if(id==='dashboard') renderDashboard();
-  if(id==='projectDetail') renderProject();
+  if(id==='projectDetail') { renderProject(); applyScopeguardFeatureVisibility(); }
   if(id==='billing') renderBilling();
   window.scrollTo({top:0,behavior:'smooth'});
 }
@@ -667,6 +698,7 @@ function renderProject(){
     `).join('')
     :`<p class="muted">No approved change orders yet.</p>`;
 
+  applyScopeguardFeatureVisibility();
   $('logList').innerHTML=(p.logs||[]).length
     ?[...p.logs].reverse().map(l=>`
       <div class="log-row">
@@ -1287,9 +1319,47 @@ window.markInvoicePaid=async(id)=>{
     if(state.company) show('home'); else show('onboarding');
   }
 }
-function routeAfterAuth(){
+async function routeAfterAuth(){
   updateUserBadge();
-  if(state.company) show('home'); else show('onboarding');
+  if(!state.company){
+    show('onboarding');
+    return;
+  }
+
+  // Cloud users must have an active entitlement before entering the app.
+  // New companies receive a 14-day trial from subscription-status; expired/inactive
+  // companies are routed to Plans & Billing.
+  if(cloudEnabled && session?.access_token){
+    try{
+      const r=await fetch(`/api/subscription-status?companyId=${encodeURIComponent(state.company.id)}`,{
+        headers:{
+          Authorization:`Bearer ${session.access_token}`,
+          'x-scopeguard-company-id':state.company.id
+        }
+      });
+      const body=await r.json().catch(()=>({}));
+      if(!r.ok) throw new Error(body.error||'Unable to verify ScopeGuard access.');
+
+      // subscription-status returns an access snapshot whose canonical
+      // access flag is `active`. Paid plans and an unexpired trial should
+      // enter ScopeGuard immediately instead of being sent back to Plans.
+      if(body.access?.active === true){
+        scopeguardAccess = body.access;
+        applyScopeguardFeatureVisibility();
+        show('home');
+        return;
+      }
+
+      window.location.href='/plans.html?access=required';
+      return;
+    }catch(error){
+      console.error('Subscription access check failed:',error);
+      window.location.href='/plans.html?access=required';
+      return;
+    }
+  }
+
+  show('home');
 }
 function updateUserBadge(){
   $('userBadge').classList.toggle('hidden',!session);
@@ -1358,7 +1428,10 @@ $('createCompanyBtn').onclick=async()=>{
     if(cErr){setSync('Sync error','offline');return alert(cErr.message);}
     const {error:mErr}=await db.from('company_members').insert({company_id:id,user_id:session.user.id,role:'owner'});
     if(mErr){setSync('Sync error','offline');return alert(mErr.message);}
-    state.company={id,name,owner:session.user.email};state.projects=[];cache();await loadCloudState();show('home');return;
+    state.company={id,name,owner:session.user.email};state.projects=[];cache();await loadCloudState();
+    // New cloud companies must see plan/trial selection before entering the app.
+    window.location.href='/plans.html?onboarding=1';
+    return;
   }
   state.company={id:uid(),name,owner:$('ownerName').value.trim(),createdAt:new Date().toISOString()};cache();show('home');};
 
@@ -1369,6 +1442,7 @@ $('quickInvoiceBtn')?.addEventListener('click', () => {
 });
 
 $('quickAiInvoiceBtn')?.addEventListener('click', () => {
+  if(!scopeguardFeatureAllowed('ai')) return alert('AI tools require the Business plan.');
   alert('AI-assisted invoice creation is being added in Step 1.A.');
 });
 
@@ -1377,6 +1451,7 @@ $('quickClientsBtn')?.addEventListener('click', () => {
 });
 
 $('quickChangeOrderBtn')?.addEventListener('click', () => {
+  if(!scopeguardFeatureAllowed('changeOrders')) return alert('Change orders require the Business plan.');
   show('projectCenter');
 });
 
@@ -2216,10 +2291,10 @@ $('analyzeBtn').onclick=async()=>{
   const work=$('workPerformed').value.trim(),directed=$('directedBy').value.trim(),details=$('logNote').value.trim();
   const note=[work,directed?`Directed/requested by: ${directed}`:'',details].filter(Boolean).join(' | ');
   if(!note)return alert('Describe the work performed first.');
-  const analysis=analyzeLog(note,p.scope,directed);const logId=uid();
+  const analysis=scopeguardFeatureAllowed('changeOrders') ? analyzeLog(note,p.scope,directed) : {score:0,isPotential:false,reason:'',hits:[]};const logId=uid();
   const log={id:logId,date:nowDate(),note,workPerformed:work,directedBy:directed,crewCount:crew,hoursEach,laborRate,directCost,laborHours,laborCost,productionQty,productionUnit:$('productionUnit').value.trim(),photos:pendingPhotos.map(x=>({name:x.name,data:x.data})),analysis};
   let extra=null;
-  if(analysis.isPotential){const estCost=laborCost+directCost,estValue=estCost*(1+Number(p.markup||20)/100);extra={id:uid(),sourceLogId:logId,date:nowDate(),title:work.slice(0,500)||'Potential extra work',reason:analysis.reason,status:'potential',laborHours,estimatedCost:estCost,estimatedValue:estValue,requestedBy:directed,note,confidence:analysis.score,photos:log.photos,photoCount:log.photos.length};}
+  if(analysis.isPotential && scopeguardFeatureAllowed('changeOrders')){const estCost=laborCost+directCost,estValue=estCost*(1+Number(p.markup||20)/100);extra={id:uid(),sourceLogId:logId,date:nowDate(),title:work.slice(0,500)||'Potential extra work',reason:analysis.reason,status:'potential',laborHours,estimatedCost:estCost,estimatedValue:estValue,requestedBy:directed,note,confidence:analysis.score,photos:log.photos,photoCount:log.photos.length};}
   try{
     if(cloudEnabled&&session){
       const {error:lErr}=await db.from('field_logs').insert({id:logId,company_id:state.company.id,project_id:p.id,created_by:session.user.id,work_date:isoDate(),notes:note,crew_count:crew,workers:crew,hours_each:hoursEach,labor_rate:laborRate,direct_cost:directCost,production_qty:productionQty,production_unit:log.productionUnit,analysis});if(lErr)throw lErr;
@@ -2227,12 +2302,13 @@ $('analyzeBtn').onclick=async()=>{
       for(const photo of pendingPhotos){const path=`${session.user.id}/${state.company.id}/${p.id}/${logId}/${uid()}-${safeName(photo.name)}`;const {error:uErr}=await db.storage.from('scopeguard-evidence').upload(path,photo.file,{contentType:photo.file.type,upsert:false});if(uErr)throw uErr;const {error:vErr}=await db.from('evidence').insert({company_id:state.company.id,project_id:p.id,field_log_id:logId,extra_work_id:extra?.id||null,storage_path:path,mime_type:photo.file.type,created_by:session.user.id});if(vErr)throw vErr;}
     }
     p.logs.push(log);if(extra)p.extras.push(extra);cache();
-    $('analysisResult').classList.remove('hidden');$('analysisResult').innerHTML=analysis.isPotential?`<div class="risk-banner"><strong>⚠ Potential extra work detected</strong><p>${escapeHtml(analysis.reason)} Preserve the photos and get written approval before this disappears into the job.</p><b>Estimated value: ${money(extra.estimatedValue)}</b></div>`:`<div class="ok-banner"><strong>✓ Logged and protected</strong><p>No strong extra-work signal was detected, but the labor, production and evidence are saved.</p></div>`;
+    $('analysisResult').classList.remove('hidden');$('analysisResult').innerHTML=analysis.isPotential?`<div class="risk-banner"><strong>⚠ Potential extra work detected</strong><p>${escapeHtml(analysis.reason)} Preserve the photos and get written approval before this disappears into the job.</p><b>Estimated value: ${money(extra.estimatedValue)}</b></div>`:`<div class="ok-banner"><strong>✓ Field log saved</strong><p>${scopeguardFeatureAllowed('changeOrders') ? 'No strong extra-work signal was detected. ' : ''}Labor, production and evidence are saved.</p></div>`;
     setSync(cloudEnabled?'Cloud synced':'Saved locally',cloudEnabled?'cloud':'offline');setTimeout(()=>show('projectDetail'),900);
   }catch(e){setSync('Sync error','offline');alert(`Could not save field log: ${e.message||e}`);}
 };
 
 window.openExtra=(id)=>{
+  if(!scopeguardFeatureAllowed('changeOrders')) return alert('Change orders require the Business plan.');
   const p=project();const e=(p?.extras||[]).find(x=>x.id===id);if(!e)return;activeExtraId=id;
   const statusOptions=['potential','approved','rejected'].map(s=>`<option value="${s}" ${e.status===s?'selected':''}>${s[0].toUpperCase()+s.slice(1)}</option>`).join('');
   $('extraDocument').innerHTML=`<div class="extra-doc"><div class="doc-header"><div><span class="eyebrow">EXTRA WORK RECORD</span><h2>${escapeHtml(e.title)}</h2></div><span class="status-chip">${escapeHtml(e.status)}</span></div><div class="doc-grid"><div><b>Project</b><span>${escapeHtml(p.name)}</span></div><div><b>Customer / GC</b><span>${escapeHtml(p.customer||'')}</span></div><div><b>Date</b><span>${escapeHtml(e.date)}</span></div><div><b>Requested by</b><span>${escapeHtml(e.requestedBy||'Not recorded')}</span></div><div><b>Labor hours</b><span>${e.laborHours||0}</span></div><div><b>Estimated cost</b><span>${money(e.estimatedCost)}</span></div><div><b>Proposed value</b><span>${money(e.estimatedValue)}</span></div><div><b>Photos</b><span>${e.photoCount||e.photos?.length||0}</span></div></div><div class="doc-section"><b>Why ScopeGuard flagged it</b><p>${escapeHtml(e.reason)}</p></div><div class="doc-section"><b>Field record</b><p>${escapeHtml(e.note)}</p></div><div class="approval-panel"><label>Status<select id="extraStatusEdit">${statusOptions}</select></label><label>Change order value ($)<input id="extraValueEdit" type="number" min="0" step="0.01" value="${Number(e.estimatedValue||0)}"></label></div><div class="modal-actions"><button class="secondary" onclick="correctExtraLaborHours()">Correct Labor Hours</button><button class="secondary" onclick="saveExtraChanges()">Save Changes</button>${e.status!=='approved'?`<button class="primary" onclick="approveChangeOrder()">Move to Approved Change Orders</button>`:''}</div></div>`;
@@ -2240,6 +2316,7 @@ window.openExtra=(id)=>{
 };
 
 window.correctExtraLaborHours=async()=>{
+  if(!scopeguardFeatureAllowed('changeOrders')) return alert('Change orders require the Business plan.');
   const p=project();const e=(p?.extras||[]).find(x=>x.id===activeExtraId);if(!e)return;
   const sourceLog=(p.logs||[]).find(l=>l.id===e.sourceLogId);
   const raw=prompt('Enter the correct total labor hours for this change order:',String(e.laborHours||sourceLog?.laborHours||0));
@@ -2278,6 +2355,7 @@ window.correctExtraLaborHours=async()=>{
 };
 
 window.approveChangeOrder=async()=>{
+  if(!scopeguardFeatureAllowed('changeOrders')) return alert('Change orders require the Business plan.');
   const p=project();const e=(p?.extras||[]).find(x=>x.id===activeExtraId);if(!e)return;
   const value=Number($('extraValueEdit')?.value||e.estimatedValue||0);
   try{
@@ -2297,6 +2375,7 @@ window.approveChangeOrder=async()=>{
 };
 
 window.saveExtraChanges=async()=>{
+  if(!scopeguardFeatureAllowed('changeOrders')) return alert('Change orders require the Business plan.');
   const p=project();const e=(p?.extras||[]).find(x=>x.id===activeExtraId);if(!e)return;
   const status=$('extraStatusEdit').value;
   const value=Number($('extraValueEdit').value||0);
@@ -2414,6 +2493,14 @@ $('menuBackdrop')?.addEventListener('click',closeMenu);
 $('menuCompanyBtn')?.addEventListener('click',()=>{
   closeMenu();
   openCompanyProfile();
+});
+
+$('menuPlansBtn')?.addEventListener('click',()=>{
+  closeMenu();
+  if(!cloudEnabled || !session?.access_token){
+    return alert('Sign in to your ScopeGuard cloud account to view plans and billing.');
+  }
+  window.location.href='/plans.html';
 });
 
 $('backFromClients')?.addEventListener('click',()=>show('home'));
@@ -2622,6 +2709,7 @@ if(emailParams.get('email')){
 }
 
 window.sendChangeOrder = async (id) => {
+  if(!scopeguardFeatureAllowed('changeOrders')) return alert('Change orders require the Business plan.');
   const p = project();
   const e = (p?.extras || []).find(x => x.id === id);
 

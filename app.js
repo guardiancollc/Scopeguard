@@ -40,6 +40,8 @@ function applyScopeguardFeatureVisibility(){
   }
   document.querySelectorAll('[data-project-tab="changes"]').forEach(el => { el.hidden = !changeOrders; el.style.display = changeOrders ? '' : 'none'; });
   if(!changeOrders && document.querySelector('[data-project-tab="changes"].active')) document.querySelector('[data-project-tab="overview"]')?.click();
+  const saveButton = document.getElementById('analyzeBtn');
+  if(saveButton) saveButton.textContent = changeOrders ? 'Save & analyze' : 'Save Field Log';
   const changes = document.getElementById('projectChangesSection');
   if(changes) { changes.hidden = !changeOrders; changes.style.display = changeOrders ? '' : 'none'; }
   const approved = document.getElementById('approvedExtraList')?.closest('.card');
@@ -2289,7 +2291,7 @@ $('analyzeBtn').onclick=async()=>{
   const work=$('workPerformed').value.trim(),directed=$('directedBy').value.trim(),details=$('logNote').value.trim();
   const note=[work,directed?`Directed/requested by: ${directed}`:'',details].filter(Boolean).join(' | ');
   if(!note)return alert('Describe the work performed first.');
-  const analysis=analyzeLog(note,p.scope,directed);const logId=uid();
+  const analysis=scopeguardFeatureAllowed('changeOrders') ? analyzeLog(note,p.scope,directed) : {score:0,isPotential:false,reason:'',hits:[]};const logId=uid();
   const log={id:logId,date:nowDate(),note,workPerformed:work,directedBy:directed,crewCount:crew,hoursEach,laborRate,directCost,laborHours,laborCost,productionQty,productionUnit:$('productionUnit').value.trim(),photos:pendingPhotos.map(x=>({name:x.name,data:x.data})),analysis};
   let extra=null;
   if(analysis.isPotential && scopeguardFeatureAllowed('changeOrders')){const estCost=laborCost+directCost,estValue=estCost*(1+Number(p.markup||20)/100);extra={id:uid(),sourceLogId:logId,date:nowDate(),title:work.slice(0,500)||'Potential extra work',reason:analysis.reason,status:'potential',laborHours,estimatedCost:estCost,estimatedValue:estValue,requestedBy:directed,note,confidence:analysis.score,photos:log.photos,photoCount:log.photos.length};}
@@ -2300,7 +2302,7 @@ $('analyzeBtn').onclick=async()=>{
       for(const photo of pendingPhotos){const path=`${session.user.id}/${state.company.id}/${p.id}/${logId}/${uid()}-${safeName(photo.name)}`;const {error:uErr}=await db.storage.from('scopeguard-evidence').upload(path,photo.file,{contentType:photo.file.type,upsert:false});if(uErr)throw uErr;const {error:vErr}=await db.from('evidence').insert({company_id:state.company.id,project_id:p.id,field_log_id:logId,extra_work_id:extra?.id||null,storage_path:path,mime_type:photo.file.type,created_by:session.user.id});if(vErr)throw vErr;}
     }
     p.logs.push(log);if(extra)p.extras.push(extra);cache();
-    $('analysisResult').classList.remove('hidden');$('analysisResult').innerHTML=analysis.isPotential?`<div class="risk-banner"><strong>⚠ Potential extra work detected</strong><p>${escapeHtml(analysis.reason)} Preserve the photos and get written approval before this disappears into the job.</p><b>Estimated value: ${money(extra.estimatedValue)}</b></div>`:`<div class="ok-banner"><strong>✓ Logged and protected</strong><p>No strong extra-work signal was detected, but the labor, production and evidence are saved.</p></div>`;
+    $('analysisResult').classList.remove('hidden');$('analysisResult').innerHTML=analysis.isPotential?`<div class="risk-banner"><strong>⚠ Potential extra work detected</strong><p>${escapeHtml(analysis.reason)} Preserve the photos and get written approval before this disappears into the job.</p><b>Estimated value: ${money(extra.estimatedValue)}</b></div>`:`<div class="ok-banner"><strong>✓ Field log saved</strong><p>${scopeguardFeatureAllowed('changeOrders') ? 'No strong extra-work signal was detected. ' : ''}Labor, production and evidence are saved.</p></div>`;
     setSync(cloudEnabled?'Cloud synced':'Saved locally',cloudEnabled?'cloud':'offline');setTimeout(()=>show('projectDetail'),900);
   }catch(e){setSync('Sync error','offline');alert(`Could not save field log: ${e.message||e}`);}
 };

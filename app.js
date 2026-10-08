@@ -39,6 +39,7 @@ function applyScopeguardFeatureVisibility(){
     if(element) { element.hidden = !allowed; element.style.display = allowed ? '' : 'none'; }
   }
   document.querySelectorAll('[data-project-tab="changes"]').forEach(el => { el.hidden = !changeOrders; el.style.display = changeOrders ? '' : 'none'; });
+  if(!changeOrders && document.querySelector('[data-project-tab="changes"].active')) document.querySelector('[data-project-tab="overview"]')?.click();
   const changes = document.getElementById('projectChangesSection');
   if(changes) { changes.hidden = !changeOrders; changes.style.display = changeOrders ? '' : 'none'; }
   const approved = document.getElementById('approvedExtraList')?.closest('.card');
@@ -61,7 +62,7 @@ function show(id){
   if(id==='clientDetail') renderClientDetail();
   if(id==='projectCenter') renderProjectCenter();
   if(id==='dashboard') renderDashboard();
-  if(id==='projectDetail') renderProject();
+  if(id==='projectDetail') { renderProject(); applyScopeguardFeatureVisibility(); }
   if(id==='billing') renderBilling();
   window.scrollTo({top:0,behavior:'smooth'});
 }
@@ -695,6 +696,7 @@ function renderProject(){
     `).join('')
     :`<p class="muted">No approved change orders yet.</p>`;
 
+  applyScopeguardFeatureVisibility();
   $('logList').innerHTML=(p.logs||[]).length
     ?[...p.logs].reverse().map(l=>`
       <div class="log-row">
@@ -2290,7 +2292,7 @@ $('analyzeBtn').onclick=async()=>{
   const analysis=analyzeLog(note,p.scope,directed);const logId=uid();
   const log={id:logId,date:nowDate(),note,workPerformed:work,directedBy:directed,crewCount:crew,hoursEach,laborRate,directCost,laborHours,laborCost,productionQty,productionUnit:$('productionUnit').value.trim(),photos:pendingPhotos.map(x=>({name:x.name,data:x.data})),analysis};
   let extra=null;
-  if(analysis.isPotential){const estCost=laborCost+directCost,estValue=estCost*(1+Number(p.markup||20)/100);extra={id:uid(),sourceLogId:logId,date:nowDate(),title:work.slice(0,500)||'Potential extra work',reason:analysis.reason,status:'potential',laborHours,estimatedCost:estCost,estimatedValue:estValue,requestedBy:directed,note,confidence:analysis.score,photos:log.photos,photoCount:log.photos.length};}
+  if(analysis.isPotential && scopeguardFeatureAllowed('changeOrders')){const estCost=laborCost+directCost,estValue=estCost*(1+Number(p.markup||20)/100);extra={id:uid(),sourceLogId:logId,date:nowDate(),title:work.slice(0,500)||'Potential extra work',reason:analysis.reason,status:'potential',laborHours,estimatedCost:estCost,estimatedValue:estValue,requestedBy:directed,note,confidence:analysis.score,photos:log.photos,photoCount:log.photos.length};}
   try{
     if(cloudEnabled&&session){
       const {error:lErr}=await db.from('field_logs').insert({id:logId,company_id:state.company.id,project_id:p.id,created_by:session.user.id,work_date:isoDate(),notes:note,crew_count:crew,workers:crew,hours_each:hoursEach,labor_rate:laborRate,direct_cost:directCost,production_qty:productionQty,production_unit:log.productionUnit,analysis});if(lErr)throw lErr;
@@ -2312,6 +2314,7 @@ window.openExtra=(id)=>{
 };
 
 window.correctExtraLaborHours=async()=>{
+  if(!scopeguardFeatureAllowed('changeOrders')) return alert('Change orders require the Business plan.');
   const p=project();const e=(p?.extras||[]).find(x=>x.id===activeExtraId);if(!e)return;
   const sourceLog=(p.logs||[]).find(l=>l.id===e.sourceLogId);
   const raw=prompt('Enter the correct total labor hours for this change order:',String(e.laborHours||sourceLog?.laborHours||0));
@@ -2350,6 +2353,7 @@ window.correctExtraLaborHours=async()=>{
 };
 
 window.approveChangeOrder=async()=>{
+  if(!scopeguardFeatureAllowed('changeOrders')) return alert('Change orders require the Business plan.');
   const p=project();const e=(p?.extras||[]).find(x=>x.id===activeExtraId);if(!e)return;
   const value=Number($('extraValueEdit')?.value||e.estimatedValue||0);
   try{
@@ -2703,6 +2707,7 @@ if(emailParams.get('email')){
 }
 
 window.sendChangeOrder = async (id) => {
+  if(!scopeguardFeatureAllowed('changeOrders')) return alert('Change orders require the Business plan.');
   const p = project();
   const e = (p?.extras || []).find(x => x.id === id);
 

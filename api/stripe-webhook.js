@@ -82,7 +82,11 @@ async function syncSubscription(subscription, deleted = false) {
     status,
     stripe_customer_id: subscription.customer || null,
     stripe_subscription_id: subscription.id || null,
-    current_period_end: subscription.current_period_end ? new Date(subscription.current_period_end * 1000).toISOString() : null,
+    current_period_end: (() => {
+      const itemEnds = subscription?.items?.data?.map(item => Number(item?.current_period_end)).filter(value => Number.isFinite(value) && value > 0) || [];
+      const periodEnd = itemEnds.length ? Math.max(...itemEnds) : Number(subscription?.current_period_end);
+      return Number.isFinite(periodEnd) && periodEnd > 0 ? new Date(periodEnd * 1000).toISOString() : null;
+    })(),
     cancel_at_period_end: Boolean(subscription.cancel_at_period_end),
     lifetime_access: false
   });

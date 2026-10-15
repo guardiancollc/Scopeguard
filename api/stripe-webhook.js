@@ -50,6 +50,21 @@ function companyIdOf(object) {
   return String(object?.metadata?.company_id || object?.client_reference_id || '').trim();
 }
 
+async function subscriptionPeriodEnd(subscriptionId) {
+  if (!subscriptionId) return null;
+  const key = String(process.env.STRIPE_SECRET_KEY || '').trim();
+  if (!key) throw new Error('STRIPE_SECRET_KEY is not configured.');
+  const response = await fetch(`https://api.stripe.com/v1/subscriptions/${encodeURIComponent(subscriptionId)}`, {
+    headers: { Authorization: `Bearer ${key}` }
+  });
+  if (!response.ok) throw new Error(`Could not retrieve Stripe subscription period (HTTP ${response.status}).`);
+  const subscription = await response.json();
+  const ends = subscription?.items?.data?.map(item => Number(item?.current_period_end))
+    .filter(value => Number.isFinite(value) && value > 0) || [];
+  const periodEnd = ends.length ? Math.max(...ends) : Number(subscription?.current_period_end);
+  return Number.isFinite(periodEnd) && periodEnd > 0 ? new Date(periodEnd * 1000).toISOString() : null;
+}
+
 async function activateCheckout(session) {
   const companyId = companyIdOf(session);
   const planId = String(session?.metadata?.plan_id || '').trim();
@@ -59,11 +74,15 @@ async function activateCheckout(session) {
   const paid = session.payment_status === 'paid' || session.mode === 'subscription';
   if (!paid) return;
 
+  const isRecurring = session.mode === 'subscription';
+  const periodEnd = isRecurring ? await subscriptionPeriodEnd(session.subscription) : null;
+  if (isRecurring && !periodEnd) throw new Error('Stripe subscription has no billing period end.');
   await patchSubscription(companyId, {
     plan_id: planId,
     status: 'active',
     stripe_customer_id: session.customer || null,
     stripe_subscription_id: session.subscription || null,
+    ...(isRecurring ? { current_period_end: periodEnd } : {}),
     lifetime_access: planId === PLAN_IDS.BUSINESS_LIFETIME,
     trial_ends_at: null
   });

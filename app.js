@@ -1448,7 +1448,69 @@ $('quickInvoiceBtn')?.addEventListener('click', () => {
 
 $('quickAiInvoiceBtn')?.addEventListener('click', () => {
   if(!scopeguardFeatureAllowed('ai')) return alert('AI tools require the Business plan.');
-  alert('AI-assisted invoice creation is being added in Step 1.A.');
+  let modal=$('aiInvoiceModal');
+  if(!modal){
+    modal=document.createElement('div');
+    modal.id='aiInvoiceModal';
+    modal.style.cssText='position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;padding:16px;overflow:auto';
+    modal.innerHTML=`<div class="card form-card" style="width:min(560px,100%);max-height:90vh;overflow:auto">
+      <div class="card-title-row"><h2>Quick AI Invoice</h2><button type="button" id="aiInvoiceClose" class="ghost">✕</button></div>
+      <p class="muted">Describe the work, quantities and prices. AI will prepare an editable draft. Missing prices will need your review.</p>
+      <label>Invoice project<select id="aiInvoiceProject" style="width:100%"></select></label>
+      <label>Describe completed work<textarea id="aiInvoiceDescription" rows="6" maxlength="5000" placeholder="Example: Installed 250 ft of rebar at $4/ft, 8 hours of labor at $65/hr, and $450 in materials."></textarea></label>
+      <p id="aiInvoiceError" class="muted" role="status"></p>
+      <button type="button" id="aiInvoiceGenerate" class="primary">Generate invoice draft</button>
+    </div>`;
+    document.body.appendChild(modal);
+    $('aiInvoiceClose').onclick=()=>modal.style.display='none';
+    modal.addEventListener('click',e=>{if(e.target===modal)modal.style.display='none';});
+    $('aiInvoiceGenerate').onclick=async()=>{
+      const btn=$('aiInvoiceGenerate'),err=$('aiInvoiceError');
+      const selected=$('aiInvoiceProject').value;
+      const description=$('aiInvoiceDescription').value.trim();
+      if(!selected||description.length<12){err.textContent='Choose a project and describe the work in at least 12 characters.';return;}
+      btn.disabled=true;btn.textContent='Generating invoice…';err.textContent='';
+      try{
+        if(!db||!session||!state.company?.id)throw new Error('Please sign in to generate an invoice.');
+        const {data:auth}=await db.auth.getSession();
+        if(!auth.session)throw new Error('Your session expired. Please sign in again.');
+        const r=await fetch('/api/ai-invoice-draft',{
+          method:'POST',headers:{Authorization:'Bearer '+auth.session.access_token,'Content-Type':'application/json'},
+          body:JSON.stringify({companyId:state.company.id,description})
+        });
+        const data=await r.json().catch(()=>({}));
+        if(!r.ok)throw new Error(data.error||'Could not generate invoice.');
+        state.activeProjectId=selected;cache();
+        modal.style.display='none';
+        show('billing');
+        $('newInvoiceBtn').click();
+        const rows=$('invoiceLineItems');rows.innerHTML='';
+        for(const item of data.lineItems){
+          const row=createInvoiceLineItem();
+          row.querySelector('.invoice-line-type').value=item.type;
+          row.querySelector('.invoice-line-description').value=item.description;
+          row.querySelector('.invoice-line-amount').value=item.amount===null?'':item.amount;
+          rows.appendChild(row);
+        }
+        updateInvoiceTotal();
+        $('invoiceDescription').value=description;
+        $('invoiceForm').scrollIntoView({behavior:'smooth',block:'start'});
+        const missing=data.lineItems.filter(x=>x.amount===null).length;
+        if(missing||data.warnings?.length)alert('Invoice draft ready. '+(missing?missing+' line item(s) need prices. ':'')+'Review every item and total before saving.');
+      }catch(e){err.textContent=e.message||'Invoice generation failed.';}
+      finally{btn.disabled=false;btn.textContent='Generate invoice draft';}
+    };
+  }
+  const select=$('aiInvoiceProject');
+  select.innerHTML='';
+  for(const p of state.projects||[]){
+    const option=document.createElement('option');option.value=p.id;option.textContent=p.name||p.title||'Unnamed project';select.appendChild(option);
+  }
+  if(state.activeProjectId)select.value=state.activeProjectId;
+  $('aiInvoiceError').textContent='';
+  if(!select.options.length){$('aiInvoiceError').textContent='Create a project before generating an invoice.';$('aiInvoiceGenerate').disabled=true;}
+  else $('aiInvoiceGenerate').disabled=false;
+  modal.style.display='flex';
 });
 
 $('quickClientsBtn')?.addEventListener('click', () => {

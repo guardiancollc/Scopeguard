@@ -127,6 +127,18 @@ module.exports = async (req, res) => {
       throw new Error('Supabase server configuration is incomplete.');
     }
 
+    // Enforce Business access on the server, regardless of the browser UI.
+    // The company ID is resolved from the stored change order, not a client claim.
+    const { requireMembership } = require('../lib/company-membership');
+    const { getOrCreateSubscription } = require('../lib/subscription-store');
+    const { canCreateChangeOrder } = require('../lib/entitlements');
+    const companyIdForAccess = await getChangeOrderCompanyId(changeOrder);
+    await requireMembership(user.id, companyIdForAccess);
+    const subscription = await getOrCreateSubscription(companyIdForAccess);
+    if (!canCreateChangeOrder(subscription)) {
+      return res.status(403).json({ error: 'Change orders require an active Business plan.' });
+    }
+
     const conn = await getConnection(user.id);
 
     if (!conn) {

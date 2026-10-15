@@ -1,6 +1,6 @@
 'use strict';
 const {userFromBearer}=require('../lib/google-email');
-const {requireMembership}=require('../lib/company-membership');
+const {requireMembership,requireRole}=require('../lib/company-membership');
 const {providerPriceId,isPurchasable}=require('../lib/billing-catalog');
 const {stripeRequest}=require('../lib/stripe');
 const {getPlan}=require('../lib/plans');
@@ -21,7 +21,7 @@ module.exports=async(req,res)=>{
     const companyId=String(req.body?.companyId||req.headers['x-scopeguard-company-id']||'').trim();
     const planId=String(req.body?.planId||'').trim();
     if(!companyId||!isPurchasable(planId)) return res.status(400).json({error:'A valid company and plan are required.'});
-    const membership=await requireMembership(user.id,companyId,['owner']);
+    const membership=requireRole(await requireMembership(user.id,companyId),['owner']);
     const price=providerPriceId(planId);
     if(!price) return res.status(503).json({error:'This ScopeGuard plan is not connected to Stripe yet.'});
     const plan=getPlan(planId);

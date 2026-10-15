@@ -30,7 +30,7 @@ module.exports = async (req, res) => {
         status: subscription.status,
         trialStartedAt: subscription.trial_started_at || null,
         trialEndsAt: subscription.trial_ends_at || null,
-        currentPeriodEndsAt: subscription.current_period_ends_at || null,
+        currentPeriodEndsAt: subscription.current_period_end || null,
         lifetimeAccess: Boolean(subscription.lifetime_access)
       },
       plan: plan ? {

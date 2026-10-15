@@ -91,24 +91,36 @@ async function activateCheckout(session) {
 async function syncSubscription(subscription, deleted = false) {
   const companyId = companyIdOf(subscription);
   const planId = String(subscription?.metadata?.plan_id || '').trim();
-  if (!companyId || !planId) return;
   const plan = getPlan(planId);
-  if (!plan) return;
+  // Stripe events may omit company metadata. The Stripe subscription ID is
+  // still a reliable identifier for an already-linked ScopeGuard subscription.
+  if (!companyId && !subscription?.id) return;
+  if (companyId && planId && !plan) return;
 
   const status = deleted ? 'canceled' : String(subscription.status || 'active');
-  await patchSubscription(companyId, {
-    plan_id: planId,
+  const itemEnds = subscription?.items?.data?.map(item => Number(item?.current_period_end))
+    .filter(value => Number.isFinite(value) && value > 0) || [];
+  const periodEnd = itemEnds.length ? Math.max(...itemEnds) : Number(subscription?.current_period_end);
+  const validEnd = Number.isFinite(periodEnd) && periodEnd > 0;
+  const values = {
+    ...(plan ? { plan_id: planId } : {}),
     status,
     stripe_customer_id: subscription.customer || null,
     stripe_subscription_id: subscription.id || null,
-    current_period_end: (() => {
-      const itemEnds = subscription?.items?.data?.map(item => Number(item?.current_period_end)).filter(value => Number.isFinite(value) && value > 0) || [];
-      const periodEnd = itemEnds.length ? Math.max(...itemEnds) : Number(subscription?.current_period_end);
-      return Number.isFinite(periodEnd) && periodEnd > 0 ? new Date(periodEnd * 1000).toISOString() : null;
-    })(),
+    ...(validEnd ? { current_period_end: new Date(periodEnd * 1000).toISOString() } : {}),
     cancel_at_period_end: Boolean(subscription.cancel_at_period_end),
-    lifetime_access: false
+    lifetime_access: false,
+    updated_at: new Date().toISOString()
+  };
+  const filter = companyId
+    ? `company_id=eq.${encodeURIComponent(companyId)}`
+    : `stripe_subscription_id=eq.${encodeURIComponent(subscription.id)}`;
+  const response = await fetch(`${supabaseUrl()}/rest/v1/company_subscriptions?${filter}`, {
+    method: 'PATCH',
+    headers: { ...serviceHeaders(), Prefer: 'return=minimal' },
+    body: JSON.stringify(values)
   });
+  if (!response.ok) throw new Error(`Could not sync Stripe subscription: ${await response.text()}`);
 }
 
 module.exports = async (req, res) => {

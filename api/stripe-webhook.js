@@ -40,10 +40,12 @@ function verifyStripeSignature(body, header, secret, toleranceSeconds = 300) {
 async function patchSubscription(companyId, values) {
   const r = await fetch(`${supabaseUrl()}/rest/v1/company_subscriptions?company_id=eq.${encodeURIComponent(companyId)}`, {
     method: 'PATCH',
-    headers: { ...serviceHeaders(), Prefer: 'return=minimal' },
+    headers: { ...serviceHeaders(), Prefer: 'return=representation' },
     body: JSON.stringify({ ...values, updated_at: new Date().toISOString() })
   });
   if (!r.ok) throw new Error(`Could not update subscription: ${await r.text()}`);
+  const rows = await r.json();
+  if (rows.length !== 1) throw new Error('Subscription checkout update did not match exactly one record.');
 }
 
 function companyIdOf(object) {
@@ -117,10 +119,12 @@ async function syncSubscription(subscription, deleted = false) {
     : `stripe_subscription_id=eq.${encodeURIComponent(subscription.id)}`;
   const response = await fetch(`${supabaseUrl()}/rest/v1/company_subscriptions?${filter}`, {
     method: 'PATCH',
-    headers: { ...serviceHeaders(), Prefer: 'return=minimal' },
+    headers: { ...serviceHeaders(), Prefer: 'return=representation' },
     body: JSON.stringify(values)
   });
   if (!response.ok) throw new Error(`Could not sync Stripe subscription: ${await response.text()}`);
+  const rows = await response.json();
+  if (rows.length !== 1) throw new Error('Subscription webhook update did not match exactly one record.');
 }
 
 module.exports = async (req, res) => {

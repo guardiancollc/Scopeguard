@@ -30,3 +30,18 @@ jobs:
       - name: Synchronize Android assets
         working-directory: mobile
         run: npx cap sync android
+      - name: Configure Java for Android
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Compile unsigned Android debug APK
+        working-directory: mobile/android
+        run: bash gradlew assembleDebug --no-daemon
+      - name: Upload Android debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: scopeguard-android-debug-preview
+          path: mobile/android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 7

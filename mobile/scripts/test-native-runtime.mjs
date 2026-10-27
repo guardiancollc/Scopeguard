@@ -13,7 +13,8 @@ function bridge(config) {
     SCOPEGUARD_NATIVE: config,
     fetch: (...args) => { calls.push(args); return Promise.resolve({ok:true}); }
   };
-  vm.runInNewContext(source,{window,Set,Promise,Error},{filename:'native-runtime.js'});
+  const document = { readyState:'loading', addEventListener:()=>{}, querySelectorAll:()=>[], getElementById:()=>null };
+  vm.runInNewContext(source,{window,document,Set,Promise,Error},{filename:'native-runtime.js'});
   return {window,calls};
 }
 async function rejects(promise, phrase) {

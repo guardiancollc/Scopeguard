@@ -9,9 +9,19 @@ const assets = ['index.html','plans.html','team.html','styles.css','app.js','pla
 await mkdir(target, {recursive:true});
 for (const name of assets) await copyFile(join(repoRoot,name),join(target,name));
 const configPath = join(target,'native-config.js');
-if (process.env.SCOPEGUARD_NATIVE_API_URL || process.env.SCOPEGUARD_NATIVE_BILLING_ENABLED) throw new Error('Unreviewed native API or billing configuration is forbidden');
-await writeFile(configPath, `window.SCOPEGUARD_NATIVE = Object.freeze({ enabled:true, apiBaseUrl:null, billingEnabled:false });
-`);
+const previewApi = process.env.SCOPEGUARD_NATIVE_PREVIEW_API_URL || '';
+const allowedPreview = 'https://scopeguard-preview.vercel.app';
+if (process.env.SCOPEGUARD_NATIVE_API_URL || process.env.SCOPEGUARD_NATIVE_BILLING_ENABLED) {
+  throw new Error('Unreviewed native API or billing configuration is forbidden');
+}
+if (previewApi && previewApi !== allowedPreview) {
+  throw new Error('Only the explicitly allowlisted ScopeGuard Preview API is permitted in native test builds');
+}
+await writeFile(configPath, 'window.SCOPEGUARD_NATIVE = Object.freeze(' + JSON.stringify({
+  enabled: true,
+  apiBaseUrl: previewApi || null,
+  billingEnabled: false
+}) + ');' + String.fromCharCode(10));
 for (const name of ['index.html','plans.html','team.html']) {
   const path = join(target,name);
   let html = await readFile(path,'utf8');

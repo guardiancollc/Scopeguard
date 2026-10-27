@@ -18,7 +18,7 @@
   else hideWebBilling();
   const blocked = new Set(['/api/billing-checkout', '/api/billing-portal']);
   const origin = typeof cfg.apiBaseUrl === 'string' ? cfg.apiBaseUrl.replace(/\/$/, '') : '';
-  const validOrigin = /^https:\/\/[^/]+$/.test(origin);
+  const validOrigin = /^https:\/\/[^/?#:@]+(?:\:[0-9]{1,5})?$/.test(origin) && !origin.includes('@');
   window.fetch = function nativeFetch(resource, options) {
     const url = typeof resource === 'string' ? resource : resource?.url;
     if (typeof url === 'string' && url.startsWith('/api/')) {

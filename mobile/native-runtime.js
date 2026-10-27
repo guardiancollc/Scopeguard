@@ -23,7 +23,7 @@
     const url = typeof resource === 'string' ? resource : resource?.url;
     if (typeof url === 'string' && url.startsWith('/api/')) {
       const pathname = url.split('?')[0];
-      if (blocked.has(pathname) && !cfg.billingEnabled) {
+      if (blocked.has(pathname)) {
         return Promise.reject(new Error('Mobile subscription purchases are not available until platform billing is implemented.'));
       }
       if (!validOrigin) {

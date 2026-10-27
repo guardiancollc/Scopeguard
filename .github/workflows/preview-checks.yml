@@ -20,6 +20,8 @@ jobs:
         run: npm run check
       - name: Stage native web assets
         run: node mobile/scripts/prepare-web.mjs
+      - name: Verify Preview API configuration restrictions
+        run: node mobile/scripts/test-preview-config.mjs
       - name: Verify staged mobile assets
         run: node mobile/scripts/verify-web.mjs
       - name: Native bridge regression tests

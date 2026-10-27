@@ -1,6 +1,6 @@
 # ScopeGuard native mobile preparation
 
-Status: scaffold only; **not a distributable App Store or Play Store build**.
+Status: unsigned iOS simulator and Android debug builds pass CI; **not yet distributable through App Store or Play Store**.
 
 ScopeGuard currently runs on Vercel with serverless `/api/*` endpoints. Simply copying the static pages into a native WebView would break relative API calls, authentication redirects, and subscription checkout. Do not ship a wrapper pointing at a Preview deployment.
 
@@ -18,7 +18,7 @@ Individual account: Anthony Caceres. Never commit Apple credentials, certificate
 
 ## Current blocking items
 - Apple enrollment pending; Google Play account not yet established.
-- No native iOS/Android project generated or signed.
+- Capacitor iOS/Android projects are generated during CI; neither is signed for store distribution.\n- Default native builds deliberately have no API origin. The allowlisted Preview API path is experimental and needs device-level authentication and CORS validation.
 - Existing web Stripe checkout is not an approved mobile purchase implementation.
 - Account deletion and public privacy/support URLs remain unverified.
 

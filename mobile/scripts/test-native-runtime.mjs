@@ -48,4 +48,10 @@ const insecure = bridge({enabled:true,apiBaseUrl:'http://api.example.test',billi
 await rejects(insecure.window.fetch('/api/team'),'not configured');
 assert.equal(insecure.calls.length,0);
 
+for (const apiBaseUrl of ['https://api.example.test/path','https://user:password@api.example.test','https://api.example.test?x=1','https://api.example.test#fragment']) {
+  const invalid = bridge({enabled:true,apiBaseUrl,billingEnabled:false});
+  await rejects(invalid.window.fetch('/api/team'),'not configured');
+  assert.equal(invalid.calls.length,0,'Unsafe API base URL must not be used: '+apiBaseUrl);
+}
+
 console.log('ScopeGuard native network bridge tests passed.');

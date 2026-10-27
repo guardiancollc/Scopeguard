@@ -11,6 +11,14 @@ function requestedCompanyId(req) {
 }
 
 module.exports = async (req, res) => {
+  const origin = req.headers?.origin;
+  if (process.env.VERCEL_ENV === 'preview' && (origin === 'capacitor://localhost' || origin === 'http://localhost')) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Vary', 'Origin');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type, X-ScopeGuard-Company-Id');
+  }
+  if (req.method === 'OPTIONS') return res.status(204).end();
   try {
     if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 

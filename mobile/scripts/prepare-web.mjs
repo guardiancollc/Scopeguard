@@ -13,8 +13,8 @@ await writeFile(configPath, `window.SCOPEGUARD_NATIVE = Object.freeze({ enabled:
 for (const name of ['index.html','plans.html','team.html']) {
   const path = join(target,name);
   let html = await readFile(path,'utf8');
-  html = html.replace('</head>', '  <script src="native-config.js"></script>\n</head>');
+  html = html.replace('</head>', '  <script src="native-config.js"></script>\n  <script src="native-runtime.js"></script>\n</head>');
   await writeFile(path,html);
 }
-console.log('ScopeGuard mobile web assets staged in mobile/www.');
+await copyFile(join(mobileRoot,'native-runtime.js'),join(target,'native-runtime.js'));\nconsole.log('ScopeGuard mobile web assets staged in mobile/www.');
 console.warn('NOT STORE-READY: Native API origin, auth redirect, and platform billing integration remain blocked.');

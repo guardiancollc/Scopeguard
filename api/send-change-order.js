@@ -90,6 +90,14 @@ async function getNextDocumentNumber(companyId, documentType) {
 }
 
 module.exports = async (req, res) => {
+  const origin = req.headers?.origin;
+  if (process.env.VERCEL_ENV === 'preview' && (origin === 'capacitor://localhost' || origin === 'http://localhost')) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Vary', 'Origin');
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type');
+  }
+  if (req.method === 'OPTIONS') return res.status(204).end();
   try {
     if (req.method !== 'POST') {
       return res.status(405).json({ error: 'Method not allowed' });

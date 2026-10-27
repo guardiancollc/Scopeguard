@@ -5,6 +5,9 @@ on:
   pull_request:
     branches: [combined-preview]
   workflow_dispatch:
+concurrency:
+  group: scopeguard-preview-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   verify:
     runs-on: ubuntu-latest

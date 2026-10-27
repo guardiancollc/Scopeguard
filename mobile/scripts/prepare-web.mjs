@@ -14,9 +14,7 @@ await writeFile(configPath, `window.SCOPEGUARD_NATIVE = Object.freeze({ enabled:
 for (const name of ['index.html','plans.html','team.html']) {
   const path = join(target,name);
   let html = await readFile(path,'utf8');
-  html = html.replace('</head>', '  <script src="native-config.js"></script>
-  <script src="native-runtime.js"></script>
-</head>');
+  html = html.replace('</head>', ['  <script src="native-config.js"></script>','  <script src="native-runtime.js"></script>','</head>'].join(String.fromCharCode(10)));
   await writeFile(path,html);
 }
 await copyFile(join(mobileRoot,'native-runtime.js'),join(target,'native-runtime.js'));

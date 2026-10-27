@@ -21,6 +21,8 @@ for (const page of ['plans.html','team.html']) {
 }
 const app = await readFile(join(www,'app.js'),'utf8');
 assert(app.includes("!window.SCOPEGUARD_NATIVE?.enabled && 'serviceWorker' in navigator"),'Native app must not register web service worker');
+assert(app.includes("window.SCOPEGUARD_NATIVE.apiBaseUrl !== 'https://scopeguard-preview.vercel.app'"),'Native approval links must reject unapproved backend origins');
+assert(app.includes('window.SCOPEGUARD_NATIVE.apiBaseUrl : window.location.origin'),'Native approval links must use HTTPS backend rather than local WebView origin');
 const plans = await readFile(join(www,'plans-ui.js'),'utf8');
 assert(plans.includes('nativeBillingBlocked'),'Native plans UI must detect mobile billing restriction');
 assert(plans.includes('if(!nativeBillingBlocked&&members[0].role'),'Native plans UI must not expose billing portal');

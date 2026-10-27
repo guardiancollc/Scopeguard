@@ -1315,7 +1315,7 @@ window.markInvoicePaid=async(id)=>{
       const response = await fetch('/api/config');
       if(!response.ok) throw new Error('Native Preview configuration request failed');
       const remote = await response.json();
-      if(!/^https:\\/\\/[^/?#]+\\.supabase\\.co$/.test(remote.supabaseUrl) || !/^sb_publishable_[A-Za-z0-9_-]+$/.test(remote.supabasePublishableKey)){
+      if(typeof remote.supabaseUrl !== 'string' || !remote.supabaseUrl.startsWith('https://') || !remote.supabaseUrl.endsWith('.supabase.co') || !/^sb_publishable_[A-Za-z0-9_-]+$/.test(remote.supabasePublishableKey)){
         throw new Error('Invalid native Preview authentication configuration');
       }
       cfg = remote;

@@ -21,3 +21,12 @@ jobs:
         run: node mobile/scripts/verify-web.mjs
       - name: Native bridge regression tests
         run: node mobile/scripts/test-native-runtime.mjs
+      - name: Install native tooling
+        working-directory: mobile
+        run: npm install --no-audit --no-fund
+      - name: Generate Android native project
+        working-directory: mobile
+        run: npx cap add android
+      - name: Synchronize Android assets
+        working-directory: mobile
+        run: npx cap sync android

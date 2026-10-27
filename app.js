@@ -1307,10 +1307,19 @@ window.markInvoicePaid=async(id)=>{
 };async function initCloud(){
   try {
     // Supabase publishable credentials are intentionally safe for browser use; RLS protects tenant data.
-    const cfg = {
+    let cfg = {
       supabaseUrl: 'https://yqgovlrxyizobsnqycko.supabase.co',
       supabasePublishableKey: 'sb_publishable_w3NPUZg6sWB4u64imbKxpg_f7UM_JTz'
     };
+    if(window.SCOPEGUARD_NATIVE?.enabled && window.SCOPEGUARD_NATIVE.apiBaseUrl){
+      const response = await fetch('/api/config');
+      if(!response.ok) throw new Error('Native Preview configuration request failed');
+      const remote = await response.json();
+      if(!/^https:\\/\\/[^/?#]+\\.supabase\\.co$/.test(remote.supabaseUrl) || !/^sb_publishable_[A-Za-z0-9_-]+$/.test(remote.supabasePublishableKey)){
+        throw new Error('Invalid native Preview authentication configuration');
+      }
+      cfg = remote;
+    }
     if(!window.supabase?.createClient) throw new Error('Supabase client failed to load');
     db = window.supabase.createClient(cfg.supabaseUrl, cfg.supabasePublishableKey);
     cloudEnabled = true;

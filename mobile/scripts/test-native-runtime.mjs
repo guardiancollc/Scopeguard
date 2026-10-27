@@ -31,15 +31,15 @@ await rejects(unconfigured.window.fetch('/api/billing-checkout',{method:'POST'})
 await rejects(unconfigured.window.fetch('/api/billing-portal'),'not available');
 assert.equal(unconfigured.calls.length,0,'No network call when native backend is not configured');
 
-const configured = bridge({enabled:true,apiBaseUrl:'https://api.example.test/',billingEnabled:false});
+const configured = bridge({enabled:true,apiBaseUrl:'https://scopeguard-preview.vercel.app/',billingEnabled:false});
 await configured.window.fetch('/api/subscription-status?companyId=123',{headers:{Authorization:'Bearer test'}});
-assert.equal(configured.calls[0][0],'https://api.example.test/api/subscription-status?companyId=123');
+assert.equal(configured.calls[0][0],'https://scopeguard-preview.vercel.app/api/subscription-status?companyId=123');
 assert.equal(configured.calls[0][1].headers.Authorization,'Bearer test');
 await configured.window.fetch('https://public.example.test/file');
 assert.equal(configured.calls[1][0],'https://public.example.test/file');
 await rejects(configured.window.fetch('/api/billing-checkout'),'not available');
 
-const incorrectlyEnabled = bridge({enabled:true,apiBaseUrl:'https://api.example.test',billingEnabled:true});
+const incorrectlyEnabled = bridge({enabled:true,apiBaseUrl:'https://scopeguard-preview.vercel.app',billingEnabled:true});
 await rejects(incorrectlyEnabled.window.fetch('/api/billing-checkout',{method:'POST'}),'not available');
 await rejects(incorrectlyEnabled.window.fetch('/api/billing-portal'),'not available');
 assert.equal(incorrectlyEnabled.calls.length,0,'Billing flag cannot bypass native purchase restrictions');
@@ -48,7 +48,7 @@ const insecure = bridge({enabled:true,apiBaseUrl:'http://api.example.test',billi
 await rejects(insecure.window.fetch('/api/team'),'not configured');
 assert.equal(insecure.calls.length,0);
 
-for (const apiBaseUrl of ['https://api.example.test/path','https://user:password@api.example.test','https://api.example.test?x=1','https://api.example.test#fragment']) {
+for (const apiBaseUrl of ['https://scopeguard-preview.vercel.app/path','https://user:password@api.example.test','https://api.example.test?x=1','https://api.example.test#fragment']) {
   const invalid = bridge({enabled:true,apiBaseUrl,billingEnabled:false});
   await rejects(invalid.window.fetch('/api/team'),'not configured');
   assert.equal(invalid.calls.length,0,'Unsafe API base URL must not be used: '+apiBaseUrl);

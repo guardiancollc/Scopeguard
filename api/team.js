@@ -9,6 +9,14 @@ const { listTeam,listInvitations,createInvitation,revokeInvitation,changeRole,di
 const companyIdFrom=req=>String(req.query?.companyId||req.body?.companyId||req.headers['x-scopeguard-company-id']||'').trim();
 
 module.exports=async(req,res)=>{
+  const origin=req.headers?.origin;
+  if(process.env.VERCEL_ENV==='preview' && (origin==='capacitor://localhost'||origin==='http://localhost')){
+    res.setHeader('Access-Control-Allow-Origin',origin);
+    res.setHeader('Vary','Origin');
+    res.setHeader('Access-Control-Allow-Methods','GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers','Authorization, Content-Type, X-ScopeGuard-Company-Id');
+  }
+  if(req.method==='OPTIONS')return res.status(204).end();
   try{
     const user=await userFromBearer(req);
     const companyId=companyIdFrom(req);

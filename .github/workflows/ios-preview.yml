@@ -3,6 +3,9 @@ on:
   push:
     branches: [combined-preview]
   workflow_dispatch:
+concurrency:
+  group: scopeguard-ios-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   ios-preview:
     runs-on: macos-15

@@ -29,3 +29,27 @@ assert.equal(request('https://evil.example','preview').headers['Access-Control-A
 assert.equal(request('capacitor://evil.example','preview').headers['Access-Control-Allow-Origin'],undefined);
 assert.equal(request('http://localhost','preview','POST').res.code,405);
 console.log('Preview-only native config CORS tests passed.');
+
+const teamHandler = require('../api/team.js');
+async function teamPreflight(origin, environment) {
+  const previous=process.env.VERCEL_ENV;
+  process.env.VERCEL_ENV=environment;
+  const headers={};
+  const res={
+    setHeader(k,v){headers[k]=v;},
+    status(code){this.code=code;return this;},
+    end(){this.ended=true;return this;}
+  };
+  try { await teamHandler({method:'OPTIONS',headers:{origin}},res); }
+  finally { if(previous===undefined)delete process.env.VERCEL_ENV;else process.env.VERCEL_ENV=previous; }
+  return {headers,res};
+}
+for(const origin of ['capacitor://localhost','http://localhost']){
+  const result=await teamPreflight(origin,'preview');
+  assert.equal(result.res.code,204);
+  assert.equal(result.headers['Access-Control-Allow-Origin'],origin);
+  assert(result.headers['Access-Control-Allow-Headers'].includes('Authorization'));
+  assert.equal((await teamPreflight(origin,'production')).headers['Access-Control-Allow-Origin'],undefined);
+}
+assert.equal((await teamPreflight('https://evil.example','preview')).headers['Access-Control-Allow-Origin'],undefined);
+console.log('Preview-only native team CORS tests passed.');

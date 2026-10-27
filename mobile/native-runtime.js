@@ -4,6 +4,18 @@
   const cfg = window.SCOPEGUARD_NATIVE;
   if (!cfg?.enabled) return;
   const originalFetch = window.fetch.bind(window);
+  // Native builds must not offer web-only Stripe checkout or billing management.
+  const hideWebBilling = () => {
+    for (const button of document.querySelectorAll('.checkout-btn, #manageSubscriptionBtn')) {
+      button.disabled = true;
+      button.hidden = true;
+      button.setAttribute('aria-hidden', 'true');
+    }
+    const notice = document.getElementById('checkoutMessage');
+    if (notice) notice.textContent = 'Mobile subscriptions are not available in this development build.';
+  };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', hideWebBilling);
+  else hideWebBilling();
   const blocked = new Set(['/api/billing-checkout', '/api/billing-portal']);
   const origin = typeof cfg.apiBaseUrl === 'string' ? cfg.apiBaseUrl.replace(/\/$/, '') : '';
   const validOrigin = /^https:\/\/[^/]+$/.test(origin);

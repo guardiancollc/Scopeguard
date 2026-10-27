@@ -1,5 +1,5 @@
 # ScopeGuard — Store Listing Draft
-Status: DRAFT ONLY. Claims and screenshots must be verified against production app before submission.
+Intended legal publisher: GUARDIANco LLC (confirm exact registered spelling during enrollment).\nStatus: DRAFT ONLY. Claims and screenshots must be verified against production app before submission.
 
 ## Product
 App name: ScopeGuard

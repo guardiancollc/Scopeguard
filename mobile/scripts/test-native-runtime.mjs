@@ -39,6 +39,11 @@ await configured.window.fetch('https://public.example.test/file');
 assert.equal(configured.calls[1][0],'https://public.example.test/file');
 await rejects(configured.window.fetch('/api/billing-checkout'),'not available');
 
+const incorrectlyEnabled = bridge({enabled:true,apiBaseUrl:'https://api.example.test',billingEnabled:true});
+await rejects(incorrectlyEnabled.window.fetch('/api/billing-checkout',{method:'POST'}),'not available');
+await rejects(incorrectlyEnabled.window.fetch('/api/billing-portal'),'not available');
+assert.equal(incorrectlyEnabled.calls.length,0,'Billing flag cannot bypass native purchase restrictions');
+
 const insecure = bridge({enabled:true,apiBaseUrl:'http://api.example.test',billingEnabled:false});
 await rejects(insecure.window.fetch('/api/team'),'not configured');
 assert.equal(insecure.calls.length,0);

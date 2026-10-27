@@ -16,7 +16,7 @@ function stage(extra = {}) {
 }
 try {
   stage({SCOPEGUARD_NATIVE_PREVIEW_API_URL:'https://scopeguard-preview.vercel.app'});
-  let source = await readFile(config,'utf8');
+  const source = await readFile(config,'utf8');
   assert(source.includes('"apiBaseUrl":"https://scopeguard-preview.vercel.app"'));
   assert(source.includes('"billingEnabled":false'));
   for (const url of ['https://scope-guard-80.vercel.app','http://scopeguard-preview.vercel.app','https://example.com']) {
@@ -27,5 +27,5 @@ try {
 } finally {
   stage();
 }
-source = await readFile(config,'utf8');
-assert(source.includes('"apiBaseUrl":null'),'Default build must remain disconnected');
+const defaultSource = await readFile(config,'utf8');
+assert(defaultSource.includes('"apiBaseUrl":null'),'Default build must remain disconnected');

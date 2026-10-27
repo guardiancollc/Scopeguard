@@ -2829,8 +2829,11 @@ window.sendChangeOrder = async (id) => {
     p.clientEmail = email;
     cache();
 
+    if(window.SCOPEGUARD_NATIVE?.enabled && window.SCOPEGUARD_NATIVE.apiBaseUrl !== 'https://scopeguard-preview.vercel.app') {
+      throw new Error('Change-order links require the approved Preview backend in this mobile build.');
+    }
     const approvalUrl =
-      `${window.location.origin}/api/approve-change-order` +
+      `${window.SCOPEGUARD_NATIVE?.enabled ? window.SCOPEGUARD_NATIVE.apiBaseUrl : window.location.origin}/api/approve-change-order` +
       `?token=${encodeURIComponent(approvalToken)}`;
 
     const response = await fetch('/api/send-change-order', {

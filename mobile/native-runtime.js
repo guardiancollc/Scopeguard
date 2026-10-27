@@ -25,9 +25,4 @@
     }
     return originalFetch(resource, options);
   };
-  // Never register the web service worker inside a native Capacitor origin.
-  if ('serviceWorker' in navigator) {
-    try { Object.defineProperty(navigator, 'serviceWorker', { value: undefined, configurable: true }); }
-    catch (_) { /* Service worker registration is separately audited before release. */ }
-  }
 })();

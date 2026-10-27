@@ -1,6 +1,6 @@
 # ScopeGuard — Store Listing Draft
 Intended publisher account type: Individual (personal publication, not GUARDIANco LLC).
-Legal publisher name: Enter privately during store enrollment; do not commit identity details.\nStatus: DRAFT ONLY. Claims and screenshots must be verified against production app before submission.
+Legal publisher name: Anthony Caceres (individual enrollment).\nStatus: DRAFT ONLY. Claims and screenshots must be verified against production app before submission.
 
 ## Product
 App name: ScopeGuard

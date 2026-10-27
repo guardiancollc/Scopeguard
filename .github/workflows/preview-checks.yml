@@ -15,3 +15,7 @@ jobs:
           node-version: '22'
       - name: Syntax and entitlement checks
         run: npm run check
+      - name: Stage native web assets
+        run: node mobile/scripts/prepare-web.mjs
+      - name: Verify staged mobile assets
+        run: node mobile/scripts/verify-web.mjs

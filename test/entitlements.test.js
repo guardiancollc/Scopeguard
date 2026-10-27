@@ -12,7 +12,7 @@ function active(plan_id, extra = {}) {
   return {
     plan_id,
     status: plan_id === 'trial' ? 'trialing' : 'active',
-    current_period_ends_at: '2026-11-05T12:00:00Z',
+    current_period_end: '2026-11-05T12:00:00Z',
     ...extra
   };
 }
@@ -75,6 +75,19 @@ assert.equal(s.active, true);
 assert.equal(s.changeOrders, true);
 assert.equal(s.ai, true);
 assert.equal(s.team, true);
+
+// Past-due and unpaid subscriptions must not retain paid access.
+for (const status of ['past_due', 'unpaid', 'incomplete']) {
+  s = accessSnapshot(active('business_monthly', { status }), NOW);
+  assert.equal(s.active, false);
+  assert.equal(s.invoices, false);
+  assert.equal(s.ai, false);
+  assert.equal(s.changeOrders, false);
+}
+
+// A paid plan with an expired or missing paid-through date is denied.
+assert.equal(isSubscriptionActive(active('business_monthly', { current_period_end: '2026-09-01T00:00:00Z' }), NOW), false);
+assert.equal(isSubscriptionActive(active('business_monthly', { current_period_end: null }), NOW), false);
 
 // Canceled/expired paid subscriptions are denied.
 assert.equal(isSubscriptionActive(active('pro_monthly', { status: 'canceled' }), NOW), false);

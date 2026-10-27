@@ -2,7 +2,7 @@ import { copyFile, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { resolve, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const mobileRoot = resolve(fileURLToPath(new URL('..', import.meta.url)));
+const mobileRoot = resolve(fileURLToPath(new URL('../', import.meta.url)));
 const repoRoot = resolve(mobileRoot, '..');
 const target = join(mobileRoot, 'www');
 const assets = ['index.html','plans.html','team.html','styles.css','app.js','plans-ui.js','team-ui.js','scopeguard-logo.png','manifest.webmanifest'];

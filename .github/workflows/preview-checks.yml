@@ -16,6 +16,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Install web API dependencies for integration tests
+        run: npm install --no-audit --no-fund
       - name: Syntax and entitlement checks
         run: npm run check
       - name: Stage native web assets

@@ -9,8 +9,8 @@ for (const asset of ['index.html','plans.html','team.html','app.js','plans-ui.js
   assert((await stat(join(www,asset))).size > 0, asset + ' must be staged and nonempty');
 }
 const nativeConfig = await readFile(join(www,'native-config.js'),'utf8');
-assert(nativeConfig.includes('apiBaseUrl:null'),'Native API must remain unconfigured until approved');
-assert(nativeConfig.includes('billingEnabled:false'),'Native billing must remain disabled');
+assert(nativeConfig.includes('"apiBaseUrl":null') || nativeConfig.includes('"apiBaseUrl":"https://scopeguard-preview.vercel.app"'),'Native API must be disconnected or use the allowlisted Preview origin');
+assert(nativeConfig.includes('"billingEnabled":false'),'Native billing must remain disabled');
 const index = await readFile(join(www,'index.html'),'utf8');
 assert(index.includes('src="native-runtime.js"'),'Native runtime must load on home screen');
 assert(index.indexOf('native-runtime.js') < index.indexOf('src="app.js"'),'Native runtime must load before app.js');

@@ -21,6 +21,10 @@ for (const page of ['plans.html','team.html']) {
 }
 const app = await readFile(join(www,'app.js'),'utf8');
 assert(app.includes("!window.SCOPEGUARD_NATIVE?.enabled && 'serviceWorker' in navigator"),'Native app must not register web service worker');
+const plans = await readFile(join(www,'plans-ui.js'),'utf8');
+assert(plans.includes('nativeBillingBlocked'),'Native plans UI must detect mobile billing restriction');
+assert(plans.includes('if(!nativeBillingBlocked&&members[0].role'),'Native plans UI must not expose billing portal');
+assert(plans.includes('checkoutButtons.forEach(b=>{b.disabled=true;b.hidden=true;})'),'Native checkout buttons must remain hidden');
 const runtime = await readFile(join(www,'native-runtime.js'),'utf8');
 assert(runtime.includes("'/api/billing-checkout'"),'Native checkout must be guarded');
 assert(runtime.includes("'/api/billing-portal'"),'Native billing portal must be guarded');

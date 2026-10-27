@@ -19,3 +19,5 @@ jobs:
         run: node mobile/scripts/prepare-web.mjs
       - name: Verify staged mobile assets
         run: node mobile/scripts/verify-web.mjs
+      - name: Native bridge regression tests
+        run: node mobile/scripts/test-native-runtime.mjs

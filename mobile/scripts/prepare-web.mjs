@@ -16,5 +16,5 @@ for (const name of ['index.html','plans.html','team.html']) {
   html = html.replace('</head>', '  <script src="native-config.js"></script>\n  <script src="native-runtime.js"></script>\n</head>');
   await writeFile(path,html);
 }
-await copyFile(join(mobileRoot,'native-runtime.js'),join(target,'native-runtime.js'));\nconsole.log('ScopeGuard mobile web assets staged in mobile/www.');
+await copyFile(join(mobileRoot,'native-runtime.js'),join(target,'native-runtime.js'));\nconst appPath = join(target,'app.js');\nlet app = await readFile(appPath,'utf8');\napp = app.replace("if('serviceWorker' in navigator){", "if(!window.SCOPEGUARD_NATIVE?.enabled && 'serviceWorker' in navigator){");\nawait writeFile(appPath,app);\nconsole.log('ScopeGuard mobile web assets staged in mobile/www.');
 console.warn('NOT STORE-READY: Native API origin, auth redirect, and platform billing integration remain blocked.');

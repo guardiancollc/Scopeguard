@@ -1,6 +1,7 @@
 # Mobile release verification checklist
 
-- [ ] Apple Developer membership active and App Store Connect access
+- [x] Apple Developer membership active (confirmed by owner, October 28, 2026)
+- [ ] App Store Connect access and app record verified
 - [ ] Google Play Console account created and verified
 - [ ] Native app project with bundle ID and package name
 - [ ] Local native asset loading, secure session persistence, deep links

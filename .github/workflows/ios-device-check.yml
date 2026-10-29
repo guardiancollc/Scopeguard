@@ -1,0 +1,41 @@
+name: ScopeGuard iPhone Device Build Check
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [combined-preview]
+    paths:
+      - 'mobile/**'
+      - '.github/workflows/ios-device-check.yml'
+      - 'app.js'
+      - 'index.html'
+      - 'plans.html'
+      - 'team.html'
+permissions:
+  contents: read
+jobs:
+  iphone-device-compile:
+    runs-on: macos-15
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Capacitor dependencies
+        working-directory: mobile
+        run: npm install --no-audit --no-fund
+      - name: Stage and verify native web assets
+        run: |
+          node mobile/scripts/prepare-web.mjs
+          node mobile/scripts/verify-web.mjs
+      - name: Generate and synchronize iOS project
+        working-directory: mobile
+        run: |
+          npx cap add ios
+          npx cap sync ios
+      - name: Compile for physical iPhone architecture (unsigned)
+        working-directory: mobile/ios/App
+        run: |
+          xcodebuild -workspace App.xcworkspace -scheme App -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath "$RUNNER_TEMP/ScopeGuardDeviceDerived" CODE_SIGNING_ALLOWED=NO build
+      - name: Report signing status
+        run: echo "Device compilation only. This workflow does not sign, export an IPA, or upload to TestFlight."

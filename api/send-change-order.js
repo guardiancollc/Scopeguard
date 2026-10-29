@@ -90,6 +90,14 @@ async function getNextDocumentNumber(companyId, documentType) {
 }
 
 module.exports = async (req, res) => {
+  const origin = req.headers?.origin;
+  if (process.env.VERCEL_ENV === 'preview' && (origin === 'capacitor://localhost' || origin === 'http://localhost')) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Vary', 'Origin');
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type');
+  }
+  if (req.method === 'OPTIONS') return res.status(204).end();
   try {
     if (req.method !== 'POST') {
       return res.status(405).json({ error: 'Method not allowed' });
@@ -125,6 +133,18 @@ module.exports = async (req, res) => {
 
     if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
       throw new Error('Supabase server configuration is incomplete.');
+    }
+
+    // Enforce Business access on the server, regardless of the browser UI.
+    // The company ID is resolved from the stored change order, not a client claim.
+    const { requireMembership } = require('../lib/company-membership');
+    const { getOrCreateSubscription } = require('../lib/subscription-store');
+    const { canCreateChangeOrder } = require('../lib/entitlements');
+    const companyIdForAccess = await getChangeOrderCompanyId(changeOrder);
+    await requireMembership(user.id, companyIdForAccess);
+    const subscription = await getOrCreateSubscription(companyIdForAccess);
+    if (!canCreateChangeOrder(subscription)) {
+      return res.status(403).json({ error: 'Change orders require an active Business plan.' });
     }
 
     const conn = await getConnection(user.id);

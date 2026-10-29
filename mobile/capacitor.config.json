@@ -1,0 +1,14 @@
+{
+  "appId": "com.guardiancollc.scopeguard",
+  "appName": "ScopeGuard",
+  "webDir": "www",
+  "server": {
+    "iosScheme": "capacitor",
+    "androidScheme": "https"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 0
+    }
+  }
+}

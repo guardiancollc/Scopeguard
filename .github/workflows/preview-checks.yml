@@ -1,0 +1,54 @@
+name: ScopeGuard Preview Checks
+on:
+  push:
+    branches: [combined-preview]
+  pull_request:
+    branches: [combined-preview]
+  workflow_dispatch:
+concurrency:
+  group: scopeguard-preview-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install web API dependencies for integration tests
+        run: npm install --no-audit --no-fund
+      - name: Syntax and entitlement checks
+        run: npm run check
+      - name: Stage native web assets
+        run: node mobile/scripts/prepare-web.mjs
+      - name: Verify Preview API configuration restrictions
+        run: node mobile/scripts/test-preview-config.mjs
+      - name: Verify staged mobile assets
+        run: node mobile/scripts/verify-web.mjs
+      - name: Native bridge regression tests
+        run: node mobile/scripts/test-native-runtime.mjs
+      - name: Install native tooling
+        working-directory: mobile
+        run: npm install --no-audit --no-fund
+      - name: Generate Android native project
+        working-directory: mobile
+        run: npx cap add android
+      - name: Synchronize Android assets
+        working-directory: mobile
+        run: npx cap sync android
+      - name: Configure Java for Android
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Compile unsigned Android debug APK
+        working-directory: mobile/android
+        run: bash gradlew assembleDebug --no-daemon
+      - name: Upload Android debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: scopeguard-android-debug-preview
+          path: mobile/android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 7

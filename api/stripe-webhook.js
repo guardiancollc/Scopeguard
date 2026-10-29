@@ -1,0 +1,161 @@
+'use strict';
+
+const crypto = require('crypto');
+const { serviceHeaders, supabaseUrl } = require('../lib/google-email');
+const { getPlan, PLAN_IDS } = require('../lib/plans');
+
+function webhookSecret() {
+  const value = String(process.env.STRIPE_WEBHOOK_SECRET || '').trim();
+  if (!value) throw Object.assign(new Error('STRIPE_WEBHOOK_SECRET is not configured.'), { status: 503 });
+  return value;
+}
+
+async function rawBody(req) {
+  if (Buffer.isBuffer(req.body)) return req.body;
+  if (typeof req.body === 'string') return Buffer.from(req.body);
+  if (req.rawBody) return Buffer.isBuffer(req.rawBody) ? req.rawBody : Buffer.from(req.rawBody);
+
+  const chunks = [];
+  for await (const chunk of req) chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+  if (chunks.length) return Buffer.concat(chunks);
+
+  throw Object.assign(new Error('Stripe webhook raw body is unavailable.'), { status: 400 });
+}
+
+function verifyStripeSignature(body, header, secret, toleranceSeconds = 300) {
+  const parts = String(header || '').split(',').map(v => v.trim());
+  const timestamp = parts.find(v => v.startsWith('t='))?.slice(2);
+  const signatures = parts.filter(v => v.startsWith('v1=')).map(v => v.slice(3));
+  if (!timestamp || !signatures.length) return false;
+  if (Math.abs(Math.floor(Date.now()/1000) - Number(timestamp)) > toleranceSeconds) return false;
+  const expected = crypto.createHmac('sha256', secret).update(timestamp + '.').update(body).digest('hex');
+  return signatures.some(sig => {
+    try {
+      const a = Buffer.from(sig, 'hex'), b = Buffer.from(expected, 'hex');
+      return a.length === b.length && crypto.timingSafeEqual(a, b);
+    } catch (_) { return false; }
+  });
+}
+
+async function patchSubscription(companyId, values) {
+  const r = await fetch(`${supabaseUrl()}/rest/v1/company_subscriptions?company_id=eq.${encodeURIComponent(companyId)}`, {
+    method: 'PATCH',
+    headers: { ...serviceHeaders(), Prefer: 'return=representation' },
+    body: JSON.stringify({ ...values, updated_at: new Date().toISOString() })
+  });
+  if (!r.ok) throw new Error(`Could not update subscription: ${await r.text()}`);
+  const rows = await r.json();
+  if (rows.length !== 1) throw new Error('Subscription checkout update did not match exactly one record.');
+}
+
+function companyIdOf(object) {
+  return String(object?.metadata?.company_id || object?.client_reference_id || '').trim();
+}
+
+async function subscriptionPeriodEnd(subscriptionId) {
+  if (!subscriptionId) return null;
+  const key = String(process.env.STRIPE_SECRET_KEY || '').trim();
+  if (!key) throw new Error('STRIPE_SECRET_KEY is not configured.');
+  const response = await fetch(`https://api.stripe.com/v1/subscriptions/${encodeURIComponent(subscriptionId)}`, {
+    headers: { Authorization: `Bearer ${key}` }
+  });
+  if (!response.ok) throw new Error(`Could not retrieve Stripe subscription period (HTTP ${response.status}).`);
+  const subscription = await response.json();
+  const ends = subscription?.items?.data?.map(item => Number(item?.current_period_end))
+    .filter(value => Number.isFinite(value) && value > 0) || [];
+  const periodEnd = ends.length ? Math.max(...ends) : Number(subscription?.current_period_end);
+  return Number.isFinite(periodEnd) && periodEnd > 0 ? new Date(periodEnd * 1000).toISOString() : null;
+}
+
+async function activateCheckout(session) {
+  const companyId = companyIdOf(session);
+  const planId = String(session?.metadata?.plan_id || '').trim();
+  const plan = getPlan(planId);
+  if (!companyId || !plan) throw new Error('Checkout event is missing ScopeGuard billing metadata.');
+
+  const paid = session.payment_status === 'paid' || session.mode === 'subscription';
+  if (!paid) return;
+
+  const isRecurring = session.mode === 'subscription';
+  const periodEnd = isRecurring ? await subscriptionPeriodEnd(session.subscription) : null;
+  if (isRecurring && !periodEnd) throw new Error('Stripe subscription has no billing period end.');
+  await patchSubscription(companyId, {
+    plan_id: planId,
+    status: 'active',
+    stripe_customer_id: session.customer || null,
+    stripe_subscription_id: session.subscription || null,
+    ...(isRecurring ? { current_period_end: periodEnd } : {}),
+    lifetime_access: planId === PLAN_IDS.BUSINESS_LIFETIME,
+    trial_ends_at: null
+  });
+}
+
+async function syncSubscription(subscription, deleted = false) {
+  const companyId = companyIdOf(subscription);
+  const planId = String(subscription?.metadata?.plan_id || '').trim();
+  const plan = getPlan(planId);
+  // Stripe events may omit company metadata. The Stripe subscription ID is
+  // still a reliable identifier for an already-linked ScopeGuard subscription.
+  if (!companyId && !subscription?.id) return;
+  if (companyId && planId && !plan) return;
+
+  const status = deleted ? 'canceled' : String(subscription.status || 'active');
+  const itemEnds = subscription?.items?.data?.map(item => Number(item?.current_period_end))
+    .filter(value => Number.isFinite(value) && value > 0) || [];
+  const periodEnd = itemEnds.length ? Math.max(...itemEnds) : Number(subscription?.current_period_end);
+  const validEnd = Number.isFinite(periodEnd) && periodEnd > 0;
+  const values = {
+    ...(plan ? { plan_id: planId } : {}),
+    status,
+    stripe_customer_id: subscription.customer || null,
+    stripe_subscription_id: subscription.id || null,
+    ...(validEnd ? { current_period_end: new Date(periodEnd * 1000).toISOString() } : {}),
+    cancel_at_period_end: Boolean(subscription.cancel_at_period_end),
+    lifetime_access: false,
+    updated_at: new Date().toISOString()
+  };
+  const filter = companyId
+    ? `company_id=eq.${encodeURIComponent(companyId)}`
+    : `stripe_subscription_id=eq.${encodeURIComponent(subscription.id)}`;
+  const response = await fetch(`${supabaseUrl()}/rest/v1/company_subscriptions?${filter}`, {
+    method: 'PATCH',
+    headers: { ...serviceHeaders(), Prefer: 'return=representation' },
+    body: JSON.stringify(values)
+  });
+  if (!response.ok) throw new Error(`Could not sync Stripe subscription: ${await response.text()}`);
+  const rows = await response.json();
+  if (rows.length !== 1) throw new Error('Subscription webhook update did not match exactly one record.');
+}
+
+module.exports = async (req, res) => {
+  try {
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+    const body = await rawBody(req);
+    if (!verifyStripeSignature(body, req.headers['stripe-signature'], webhookSecret())) {
+      return res.status(400).json({ error: 'Invalid Stripe signature.' });
+    }
+
+    const event = JSON.parse(body.toString('utf8'));
+    switch (event.type) {
+      case 'checkout.session.completed':
+      case 'checkout.session.async_payment_succeeded':
+        await activateCheckout(event.data.object);
+        break;
+      case 'customer.subscription.created':
+      case 'customer.subscription.updated':
+        await syncSubscription(event.data.object);
+        break;
+      case 'customer.subscription.deleted':
+        await syncSubscription(event.data.object, true);
+        break;
+      default:
+        break;
+    }
+    return res.json({ received: true });
+  } catch (error) {
+    console.error(error);
+    return res.status(error.status || 500).json({ error: error.message || 'Stripe webhook failed.' });
+  }
+};
+
+module.exports.config = { api: { bodyParser: false } };

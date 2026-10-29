@@ -1,0 +1,41 @@
+name: ScopeGuard iOS Preview Build
+on:
+  push:
+    branches: [combined-preview]
+  workflow_dispatch:
+concurrency:
+  group: scopeguard-ios-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  ios-preview:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Capacitor tooling
+        working-directory: mobile
+        run: npm install --no-audit --no-fund
+      - name: Stage mobile assets
+        working-directory: mobile
+        run: npm run prepare:web
+      - name: Verify mobile assets
+        run: node mobile/scripts/verify-web.mjs
+      - name: Generate iOS project
+        working-directory: mobile
+        run: npx cap add ios
+      - name: Synchronize iOS assets
+        working-directory: mobile
+        run: npx cap sync ios
+      - name: Compile unsigned iOS simulator app
+        working-directory: mobile/ios/App
+        run: |
+          xcodebuild -workspace App.xcworkspace -scheme App -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath "$RUNNER_TEMP/ScopeGuardDerived" CODE_SIGNING_ALLOWED=NO build
+      - name: Archive unsigned simulator app
+        uses: actions/upload-artifact@v4
+        with:
+          name: scopeguard-ios-simulator-preview
+          path: ${{ runner.temp }}/ScopeGuardDerived/Build/Products/Debug-iphonesimulator/App.app
+          if-no-files-found: error
+          retention-days: 7
